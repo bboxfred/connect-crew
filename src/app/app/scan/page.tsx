@@ -57,7 +57,7 @@ type ScanErrorResponse = { ok: false; error: string; steps: string[] };
 const WAITING_STEPS = [
   "Claude reading card image",
   "Claude extracting fields",
-  "Genspark enriching via public web",
+  "Claude searching the public web",
   "Filing in your graph",
 ];
 
@@ -141,7 +141,7 @@ export default function ScanPage() {
     // the server's step log.
     panel.run({
       crew: "scan",
-      title: "Scan · Claude + Genspark",
+      title: "Scan · Claude Vision + web search",
       steps: WAITING_STEPS,
       stepMs: 4500,
       autoDismissMs: null,
@@ -176,7 +176,7 @@ export default function ScanPage() {
       // Success — replace the waiting animation with the real step log.
       panel.run({
         crew: "scan",
-        title: "Scan · Claude + Genspark",
+        title: "Scan · Claude Vision + web search",
         steps: json.steps,
         stepMs: 450,
         autoDismissMs: null,
@@ -386,7 +386,7 @@ export default function ScanPage() {
                       className="h-3.5 w-3.5 anim-pulse-hot"
                       style={{ color: "var(--coral)" }}
                     />
-                    Claude + Genspark working…
+                    Claude + web search working…
                   </div>
                 ) : null}
               </div>
@@ -406,8 +406,8 @@ export default function ScanPage() {
                         Send this card to the Crew?
                       </h3>
                       <p className="text-sm text-[var(--muted-strong)] leading-relaxed mb-5">
-                        Claude reads the card. Genspark enriches the company
-                        from public web. If there&apos;s an email, a warm
+                        Claude reads the card and searches the public web for
+                        company context. If there&apos;s an email, a warm
                         follow-up is staged in Gmail drafts.
                       </p>
 
@@ -437,9 +437,9 @@ export default function ScanPage() {
                       In progress
                     </div>
                     <p className="leading-relaxed">
-                      Watch the Genspark side panel on the right for live
-                      progress. Claude + Genspark + Composio exchange ~6 steps
-                      before the contact + draft land.
+                      Watch the side panel on the right for live progress.
+                      Claude (vision + web search) + Composio exchange ~6
+                      steps before the contact + draft land.
                     </p>
                   </div>
                 ) : null}
@@ -633,13 +633,13 @@ function DoneView({ result }: { result: ScanResult }) {
           }}
         >
           <span className="uppercase tracking-wider text-[var(--sage)] mr-1">
-            Genspark:
+            Web research:
           </span>
           {enrichment.company_summary}
         </div>
       ) : (
         <div className="rounded-lg p-3 border border-[var(--border)] font-mono text-[11px] leading-relaxed mb-3 text-[var(--muted)]">
-          <span className="uppercase tracking-wider mr-1">Genspark:</span>
+          <span className="uppercase tracking-wider mr-1">Web research:</span>
           skipped — {enrichment.reason}
         </div>
       )}

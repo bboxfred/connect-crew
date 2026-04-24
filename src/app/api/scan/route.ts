@@ -4,14 +4,15 @@
  * Accepts a card image (as a base64 data URL) and optional "where did we
  * meet?" context. Runs:
  *   1. Claude Vision → structured card fields
- *   2. Genspark Super Agent → public-web company enrichment (15s budget,
- *      graceful skip)
+ *   2. Claude web search → public-web company enrichment (graceful skip
+ *      on failure — Plan B after Genspark's REST API turned out not to
+ *      exist publicly; see claude-websearch.ts for the full context)
  *   3. Supabase insert into `contacts` (warmth = 50)
  *   4. If email present: Claude drafts a warm follow-up → Composio stages
  *      it in Gmail Drafts → Supabase insert into `drafts`
  *
  * Returns the resulting contact + enrichment + draft + a flat array of
- * step labels the client replays into the Genspark side panel.
+ * step labels the client replays into the side panel.
  *
  * Runtime: nodejs (we need @composio/core + Anthropic SDK + Supabase full
  * client — none of which target the Edge runtime cleanly).
@@ -19,8 +20,8 @@
 
 import { extractCardFields, countExtractedFields } from "@/lib/claude-vision";
 import type { CardExtract } from "@/lib/claude-vision";
-import { enrichCompany } from "@/lib/genspark";
-import type { GensparkEnrichment } from "@/lib/genspark";
+import { researchCompany } from "@/lib/claude-websearch";
+import type { CompanyResearch } from "@/lib/claude-websearch";
 import { draftScannerFollowup } from "@/lib/claude-draft";
 import { createGmailDraft } from "@/lib/composio";
 import { supabaseServer } from "@/lib/supabase";
@@ -42,7 +43,7 @@ type ScanResponse = {
     warmth_index: number;
     met_at: string | null;
   };
-  enrichment: GensparkEnrichment;
+  enrichment: CompanyResearch;
   extract: {
     confidence: CardExtract["confidence"];
     found: number;
@@ -131,13 +132,13 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  // ── Step 2: Genspark enrichment (best-effort, 15s cap) ────────────────
+  // ── Step 2: Claude web search enrichment (best-effort) ───────────────
   steps.push(
     extract.company
-      ? `Genspark enriching ${extract.company} from public web`
-      : "Genspark skipped — no company on card",
+      ? `Claude searching the web for ${extract.company}`
+      : "Web research skipped — no company on card",
   );
-  const enrichment = await enrichCompany({
+  const enrichment = await researchCompany({
     name: extract.name,
     company: extract.company,
     website: extract.website,
@@ -148,9 +149,9 @@ export async function POST(req: Request): Promise<Response> {
       enrichment.sources_cited.length > 0
         ? ` · ${enrichment.sources_cited.slice(0, 3).join(", ")}`
         : "";
-    steps.push(`Genspark enriched${srcNote}`);
+    steps.push(`Claude returned enrichment${srcNote}`);
   } else {
-    steps.push(`Genspark skipped: ${enrichment.reason}`);
+    steps.push(`Web research skipped: ${enrichment.reason}`);
   }
 
   // ── Step 3: Supabase insert contact ──────────────────────────────────
@@ -176,7 +177,7 @@ export async function POST(req: Request): Promise<Response> {
         ? {
             company_summary: enrichment.company_summary,
             sources_cited: enrichment.sources_cited,
-            source: "genspark",
+            source: "claude_web_search",
           }
         : {
             status: "skipped",
