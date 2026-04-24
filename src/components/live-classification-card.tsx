@@ -346,14 +346,17 @@ export function LiveClassificationCard({
                   <path d="M22 2 11 13" />
                   <path d="m22 2-7 20-4-9-9-4 20-7z" />
                 </svg>
-                Message fires to {latest?.signals?.sender_name ?? "your contact"}
+                {firedDraft.matched_trigger
+                  ? "Sent automatically to "
+                  : "Message fires to "}
+                {latest?.signals?.sender_name ?? "your contact"}
                 {firedDraft.matched_trigger ? (
                   <span className="normal-case tracking-normal text-[var(--muted-strong)]">
-                    · matched &ldquo;{firedDraft.matched_trigger}&rdquo;
+                    · matched &ldquo;{firedDraft.matched_trigger}&rdquo; · no approval needed
                   </span>
                 ) : (
                   <span className="normal-case tracking-normal text-[var(--muted-strong)]">
-                    · Claude drafted fresh
+                    · Claude drafted · needs approval in Morning Connect
                   </span>
                 )}
               </div>

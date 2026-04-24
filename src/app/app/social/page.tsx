@@ -8,9 +8,9 @@ import {
   Inbox,
   Sparkles,
   MessageSquareReply,
-  Instagram,
-  Twitter,
-  Facebook,
+  Camera,
+  AtSign,
+  MessageCircle,
 } from "lucide-react";
 import { CREW } from "@/lib/fixtures";
 import { SecretSignalsPanel } from "@/components/secret-signals-panel";
@@ -36,11 +36,11 @@ const PLATFORMS: Array<{
   id: PlatformId;
   name: string;
   handle: string;
-  icon: typeof Instagram;
+  icon: typeof Camera;
 }> = [
-  { id: "instagram", name: "Instagram", handle: "@bboxfred", icon: Instagram },
-  { id: "x", name: "X (Twitter)", handle: "@bboxfred", icon: Twitter },
-  { id: "fb", name: "FB Messenger", handle: "Freddy Lim", icon: Facebook },
+  { id: "instagram", name: "Instagram", handle: "@bboxfred", icon: Camera },
+  { id: "x", name: "X (Twitter)", handle: "@bboxfred", icon: AtSign },
+  { id: "fb", name: "FB Messenger", handle: "Freddy Lim", icon: MessageCircle },
 ];
 
 export default function SocialPage() {
@@ -263,7 +263,7 @@ function PlatformTab({
 }: {
   name: string;
   handle: string;
-  Icon: typeof Instagram;
+  Icon: typeof Camera;
   connected: boolean;
   accentColor: string;
   onToggle: () => void;
