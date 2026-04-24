@@ -1,11 +1,16 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
-  AtSign,
   Send,
   Inbox,
   Sparkles,
   MessageSquareReply,
+  Instagram,
+  Twitter,
+  Facebook,
 } from "lucide-react";
 import { CREW } from "@/lib/fixtures";
 import { SecretSignalsPanel } from "@/components/secret-signals-panel";
@@ -25,8 +30,31 @@ import { SecretSignalsPanel } from "@/components/secret-signals-panel";
 //
 // Both land in Morning Connect for approval. Never cold-DMs strangers.
 
+type PlatformId = "instagram" | "x" | "fb";
+
+const PLATFORMS: Array<{
+  id: PlatformId;
+  name: string;
+  handle: string;
+  icon: typeof Instagram;
+}> = [
+  { id: "instagram", name: "Instagram", handle: "@bboxfred", icon: Instagram },
+  { id: "x", name: "X (Twitter)", handle: "@bboxfred", icon: Twitter },
+  { id: "fb", name: "FB Messenger", handle: "Freddy Lim", icon: Facebook },
+];
+
 export default function SocialPage() {
   const crew = CREW.social;
+
+  const [connected, setConnected] = useState<Record<PlatformId, boolean>>({
+    instagram: true,
+    x: false,
+    fb: false,
+  });
+
+  function toggle(id: PlatformId) {
+    setConnected((c) => ({ ...c, [id]: !c[id] }));
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-10">
@@ -59,41 +87,31 @@ export default function SocialPage() {
         </p>
       </header>
 
-      {/* Platform tiles */}
-      <section
-        className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 anim-fade-up"
-        style={{ animationDelay: "0.04s" }}
-      >
-        <PlatformTile
-          index={1}
-          name="Instagram"
-          status="architecture"
-          color={crew.color}
-          stats={[
-            { label: "Captured today", value: "4" },
-            { label: "Warmest", value: "Kai J. · 68" },
-          ]}
-        />
-        <PlatformTile
-          index={2}
-          name="X (Twitter)"
-          status="architecture"
-          color={crew.color}
-          stats={[
-            { label: "Captured today", value: "2" },
-            { label: "Warmest", value: "Naomi P. · 58" },
-          ]}
-        />
-        <PlatformTile
-          index={3}
-          name="FB Messenger"
-          status="architecture"
-          color={crew.color}
-          stats={[
-            { label: "Captured today", value: "0" },
-            { label: "Meta API", value: "pending" },
-          ]}
-        />
+      {/* Platform connection tabs — one row, big toggle per platform */}
+      <section className="anim-fade-up" style={{ animationDelay: "0.04s" }}>
+        <div
+          className="font-mono text-[10px] uppercase tracking-widest mb-3 flex items-center justify-between"
+          style={{ color: crew.color }}
+        >
+          <span>Your social channels</span>
+          <span className="normal-case tracking-normal text-[var(--muted)]">
+            {Object.values(connected).filter(Boolean).length} of{" "}
+            {PLATFORMS.length} connected
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 md:gap-3">
+          {PLATFORMS.map((p) => (
+            <PlatformTab
+              key={p.id}
+              name={p.name}
+              handle={p.handle}
+              Icon={p.icon}
+              connected={connected[p.id]}
+              accentColor={crew.color}
+              onToggle={() => toggle(p.id)}
+            />
+          ))}
+        </div>
       </section>
 
       {/* ─── Mode 1: Outbound cues ─────────────────────────────────── */}
@@ -235,76 +253,84 @@ export default function SocialPage() {
   );
 }
 
-function PlatformTile({
-  index,
+function PlatformTab({
   name,
-  status,
-  color,
-  stats,
+  handle,
+  Icon,
+  connected,
+  accentColor,
+  onToggle,
 }: {
-  index?: number;
   name: string;
-  status: "live" | "architecture";
-  color: string;
-  stats: { label: string; value: string }[];
+  handle: string;
+  Icon: typeof Instagram;
+  connected: boolean;
+  accentColor: string;
+  onToggle: () => void;
 }) {
   return (
-    <article
-      className="rounded-2xl border p-5"
+    <div
+      className={`rounded-2xl border p-4 flex items-center gap-3 transition-all ${
+        connected ? "shadow-sm" : ""
+      }`}
       style={{
-        borderColor: `color-mix(in srgb, ${color} 22%, transparent)`,
-        backgroundColor: `color-mix(in srgb, ${color} 5%, white)`,
+        borderColor: connected
+          ? `color-mix(in srgb, ${accentColor} 35%, transparent)`
+          : "var(--border)",
+        backgroundColor: connected
+          ? `color-mix(in srgb, ${accentColor} 6%, white)`
+          : "var(--surface)",
       }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2.5">
-          {index !== undefined ? (
-            <span
-              className="inline-flex h-6 w-6 items-center justify-center rounded-full font-mono text-[11px] font-semibold tabular-nums"
-              style={{
-                backgroundColor: `color-mix(in srgb, ${color} 18%, white)`,
-                color,
-              }}
-              aria-hidden
-            >
-              {index}
-            </span>
-          ) : (
-            <AtSign className="h-4 w-4" strokeWidth={1.75} style={{ color }} />
-          )}
-          <div
-            className="font-editorial text-base tracking-tight"
-            style={{ fontWeight: 700 }}
-          >
-            {name}
-          </div>
-        </div>
-        <span
-          className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded"
-          style={{
-            backgroundColor: `color-mix(in srgb, ${color} 12%, white)`,
-            color,
-          }}
+      <div
+        className="h-10 w-10 rounded-xl shrink-0 flex items-center justify-center"
+        style={{
+          backgroundColor: connected
+            ? `color-mix(in srgb, ${accentColor} 18%, white)`
+            : "color-mix(in srgb, var(--muted) 10%, white)",
+          color: connected ? accentColor : "var(--muted)",
+        }}
+      >
+        <Icon className="h-5 w-5" strokeWidth={1.75} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div
+          className="font-editorial text-sm md:text-base tracking-tight truncate"
+          style={{ fontWeight: 700 }}
         >
-          {status === "live" ? "Live" : "Architecture"}
-        </span>
+          {name}
+        </div>
+        <div
+          className="font-mono text-[11px] text-[var(--muted)] truncate"
+          title={connected ? handle : "Not connected"}
+        >
+          {connected ? handle : "Not connected"}
+        </div>
       </div>
-      <div className="space-y-1.5">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="flex items-center justify-between text-sm"
-          >
-            <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)]">
-              {s.label}
-            </span>
-            <span className="font-medium text-[var(--foreground)] tabular-nums">
-              {s.value}
-            </span>
-          </div>
-        ))}
-      </div>
-    </article>
+      <button
+        type="button"
+        onClick={onToggle}
+        role="switch"
+        aria-checked={connected}
+        aria-label={connected ? `Disconnect ${name}` : `Connect ${name}`}
+        className="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+        style={{
+          backgroundColor: connected
+            ? accentColor
+            : "color-mix(in srgb, var(--muted) 28%, white)",
+          boxShadow: connected
+            ? `inset 0 1px 2px color-mix(in srgb, ${accentColor} 55%, black)`
+            : "inset 0 1px 2px rgba(0,0,0,0.08)",
+        }}
+      >
+        <span
+          className="inline-block h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200"
+          style={{
+            transform: connected ? "translateX(24px)" : "translateX(4px)",
+          }}
+        />
+      </button>
+    </div>
   );
 }
 
