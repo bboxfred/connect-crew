@@ -88,25 +88,25 @@ export default function MessengerPage() {
         <LiveClassificationCard accentColor={crew.color} />
       </div>
 
-      {/* Note to hackathon judges — first-person from Freddy */}
+      {/* Note to hackathon judges — first-person from Freddy · red accent */}
       <aside
         className="rounded-2xl border p-5 md:p-6 anim-fade-up"
         style={{
           animationDelay: "0.18s",
-          borderColor: "color-mix(in srgb, var(--indigo) 22%, transparent)",
-          backgroundColor: "color-mix(in srgb, var(--indigo) 4%, white)",
+          borderColor: "color-mix(in srgb, var(--warmth-hot) 35%, transparent)",
+          backgroundColor: "color-mix(in srgb, var(--warmth-hot) 7%, white)",
         }}
       >
         <div className="flex items-start gap-3">
           <Info
             className="h-4 w-4 mt-0.5 shrink-0"
             strokeWidth={1.75}
-            style={{ color: "var(--indigo)" }}
+            style={{ color: "var(--warmth-hot)" }}
           />
           <div className="min-w-0">
             <div
               className="font-mono text-[10px] uppercase tracking-widest mb-3"
-              style={{ color: "var(--indigo)" }}
+              style={{ color: "var(--warmth-hot)" }}
             >
               Note to hackathon judges
             </div>
@@ -120,7 +120,7 @@ export default function MessengerPage() {
               <div>
                 <div
                   className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
-                  style={{ color: "var(--indigo)" }}
+                  style={{ color: "var(--warmth-hot)" }}
                 >
                   What I want to ship
                 </div>
@@ -140,7 +140,7 @@ export default function MessengerPage() {
               <div>
                 <div
                   className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
-                  style={{ color: "var(--indigo)" }}
+                  style={{ color: "var(--warmth-hot)" }}
                 >
                   The wall I ran into
                 </div>
@@ -162,7 +162,7 @@ export default function MessengerPage() {
               <div>
                 <div
                   className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
-                  style={{ color: "var(--indigo)" }}
+                  style={{ color: "var(--warmth-hot)" }}
                 >
                   The tradeoff I made
                 </div>
@@ -178,7 +178,7 @@ export default function MessengerPage() {
               <div>
                 <div
                   className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
-                  style={{ color: "var(--indigo)" }}
+                  style={{ color: "var(--warmth-hot)" }}
                 >
                   How to see it working today
                 </div>
@@ -211,7 +211,7 @@ export default function MessengerPage() {
               <div>
                 <div
                   className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
-                  style={{ color: "var(--indigo)" }}
+                  style={{ color: "var(--warmth-hot)" }}
                 >
                   Post-hackathon path
                 </div>
