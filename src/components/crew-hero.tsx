@@ -25,7 +25,7 @@ type MediaKind = "image" | "video" | null;
 // Genspark nano-banana-pro, served from /public/hero/{slug}.png
 const MEDIA_FILES: Record<string, { ext: string; kind: MediaKind }> = {
   "master-connect": { ext: "png", kind: "image" },
-  scan: { ext: "png", kind: "image" },
+  scan: { ext: "mp4", kind: "video" },
   signals: { ext: "png", kind: "image" },
   inbound: { ext: "png", kind: "image" },
   social: { ext: "png", kind: "image" },
