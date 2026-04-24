@@ -4,9 +4,11 @@
  * Accepts a card image (as a base64 data URL) and optional "where did we
  * meet?" context. Runs:
  *   1. Claude Vision → structured card fields
- *   2. Claude web search → public-web company enrichment (graceful skip
- *      on failure — Plan B after Genspark's REST API turned out not to
- *      exist publicly; see claude-websearch.ts for the full context)
+ *   2. Genspark CLI → public-web company enrichment via the official
+ *      @genspark/cli npm package (gsk binary). Shell-out to the CLI,
+ *      parse JSON stdout. 25s cap, graceful skip. See genspark-cli.ts
+ *      for the full rationale (Genspark REST API isn't publicly
+ *      documented but the CLI is — and it's the sponsor's tool).
  *   3. Supabase insert into `contacts` (warmth = 50)
  *   4. If email present: Claude drafts a warm follow-up → Composio stages
  *      it in Gmail Drafts → Supabase insert into `drafts`
@@ -20,8 +22,8 @@
 
 import { extractCardFields, countExtractedFields } from "@/lib/claude-vision";
 import type { CardExtract } from "@/lib/claude-vision";
-import { researchCompany } from "@/lib/claude-websearch";
-import type { CompanyResearch } from "@/lib/claude-websearch";
+import { researchCompany } from "@/lib/genspark-cli";
+import type { CompanyResearch } from "@/lib/genspark-cli";
 import { draftScannerFollowup } from "@/lib/claude-draft";
 import { createGmailDraft } from "@/lib/composio";
 import { supabaseServer } from "@/lib/supabase";
@@ -132,11 +134,11 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  // ── Step 2: Claude web search enrichment (best-effort) ───────────────
+  // ── Step 2: Genspark CLI enrichment (best-effort, 25s cap) ───────────
   steps.push(
     extract.company
-      ? `Claude searching the web for ${extract.company}`
-      : "Web research skipped — no company on card",
+      ? `Genspark searching the web for ${extract.company}`
+      : "Genspark skipped — no company on card",
   );
   const enrichment = await researchCompany({
     name: extract.name,
@@ -149,9 +151,9 @@ export async function POST(req: Request): Promise<Response> {
       enrichment.sources_cited.length > 0
         ? ` · ${enrichment.sources_cited.slice(0, 3).join(", ")}`
         : "";
-    steps.push(`Claude returned enrichment${srcNote}`);
+    steps.push(`Genspark returned ${enrichment.top_results.length} sources${srcNote}`);
   } else {
-    steps.push(`Web research skipped: ${enrichment.reason}`);
+    steps.push(`Genspark skipped: ${enrichment.reason}`);
   }
 
   // ── Step 3: Supabase insert contact ──────────────────────────────────
@@ -177,7 +179,8 @@ export async function POST(req: Request): Promise<Response> {
         ? {
             company_summary: enrichment.company_summary,
             sources_cited: enrichment.sources_cited,
-            source: "claude_web_search",
+            top_results: enrichment.top_results,
+            source: "genspark_cli",
           }
         : {
             status: "skipped",
