@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Check,
@@ -10,6 +10,7 @@ import {
   Send,
   Ban,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import {
   CREW,
@@ -18,7 +19,77 @@ import {
   type FixtureDraft,
   type DraftStatus,
 } from "@/lib/fixtures";
+import type { LiveDraft } from "@/app/api/drafts/live/route";
 import { cn, warmthTier } from "@/lib/utils";
+
+// ─── Live draft ingestion ─────────────────────────────────────────────────
+// Live drafts come from /api/drafts/live (Messenger pipeline output).
+// We convert them to the FixtureDraft shape so the existing UI renders
+// them alongside fixtures, then track their ids in `liveIds` so the
+// approve handlers fire real POSTs for them.
+
+function initialsFor(name: string | null | undefined): string {
+  if (!name) return "??";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "??";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function channelLabel(
+  raw: string | null,
+): FixtureDraft["channel"] {
+  switch ((raw ?? "").toLowerCase()) {
+    case "telegram":
+      return "Telegram";
+    case "gmail":
+      return "Gmail";
+    case "whatsapp":
+      return "WhatsApp";
+    case "linkedin":
+      return "LinkedIn";
+    default:
+      return "Telegram";
+  }
+}
+
+function liveDraftToFixture(d: LiveDraft): FixtureDraft {
+  const r = d.reasoning ?? {};
+  const name = d.contact?.name ?? "Telegram contact";
+  const signalChips = [
+    ...(r.signals_detected ?? []),
+    ...(r.calibration_trace ?? []),
+  ].slice(0, 6);
+  return {
+    id: d.id,
+    contact_id: d.contact?.id ?? d.contact_id ?? d.id,
+    contact: name,
+    company: d.contact?.company ?? "Direct",
+    initials: initialsFor(name),
+    crew: "signals",
+    channel: channelLabel(d.channel),
+    warmth: d.contact?.warmth_index ?? 50,
+    signal_chips: signalChips,
+    draft: d.draft_content,
+    reasoning: r.reasoning ?? "Calibrated reply from Messenger classifier.",
+    reasoning_trail: [
+      {
+        crew: "signals",
+        note:
+          r.classifier_reasoning ??
+          `Classified as ${r.classifier_tier ?? "warm"} based on the inbound tone.`,
+      },
+      {
+        crew: "signals",
+        note:
+          r.calibration_trace && r.calibration_trace.length > 0
+            ? `Calibration: ${r.calibration_trace.slice(0, 3).join(" · ")}`
+            : "Reply calibrated to the detected tier.",
+      },
+    ],
+    status: "pending",
+  };
+}
 
 function formatToday(): string {
   const now = new Date();
@@ -54,6 +125,50 @@ export default function MorningConnectPage() {
     ),
   );
   const [sent, setSent] = useState(false);
+  const [liveDrafts, setLiveDrafts] = useState<FixtureDraft[]>([]);
+  const [liveIds, setLiveIds] = useState<Set<string>>(new Set());
+
+  // Fetch live drafts from Supabase on mount (Messenger-pipeline output)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/drafts/live", { cache: "no-store" });
+        const json = (await res.json()) as
+          | { ok: true; drafts: LiveDraft[] }
+          | { ok: false; error: string };
+        if (cancelled || !("ok" in json) || !json.ok) return;
+        const converted = json.drafts.map(liveDraftToFixture);
+        setLiveDrafts(converted);
+        setLiveIds(new Set(converted.map((d) => d.id)));
+        setItems((prev) => {
+          const next = { ...prev };
+          for (const d of converted) {
+            if (!next[d.id]) {
+              next[d.id] = {
+                checked: true,
+                expanded: false,
+                status: "pending",
+              };
+            }
+          }
+          return next;
+        });
+      } catch (err) {
+        console.error("[morning-connect] live drafts fetch failed:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Merge live drafts (prepended) with fixtures — live land at the top of
+  // their Crew section for a clear "just drafted" signal.
+  const allDrafts = useMemo(
+    () => [...liveDrafts, ...fixtureDrafts],
+    [liveDrafts],
+  );
 
   // Group drafts by Crew
   const groups = useMemo(() => {
@@ -64,15 +179,32 @@ export default function MorningConnectPage() {
       scribe: [],
       social: [],
     };
-    for (const d of fixtureDrafts) map[d.crew].push(d);
+    for (const d of allDrafts) map[d.crew].push(d);
     return map;
-  }, []);
+  }, [allDrafts]);
 
   const activeCrews = CREW_ORDER_IN_REVIEW.filter((k) => groups[k].length > 0);
 
-  const totalCount = fixtureDrafts.length;
+  const totalCount = allDrafts.length;
   const selectedCount = Object.values(items).filter((s) => s.checked).length;
   const sentCount = Object.values(items).filter((s) => s.status === "approved").length;
+
+  /**
+   * For any live draft being approved, fire POST /api/drafts/:id/approve
+   * in parallel. Fire-and-forget — UI already flipped optimistically.
+   */
+  function sendLiveApprovals(ids: string[]) {
+    const live = ids.filter((id) => liveIds.has(id));
+    if (live.length === 0) return;
+    for (const id of live) {
+      fetch(`/api/drafts/${id}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }).catch((err) => {
+        console.error(`[morning-connect] approve ${id} failed:`, err);
+      });
+    }
+  }
 
   function toggleChecked(id: string) {
     setItems((p) => ({ ...p, [id]: { ...p[id], checked: !p[id].checked } }));
@@ -91,31 +223,37 @@ export default function MorningConnectPage() {
   }
 
   function approveAll() {
+    const idsToSend: string[] = [];
     setItems((p) => {
       const next = { ...p };
       for (const id in next) {
         if (next[id].checked && next[id].status !== "never") {
           next[id] = { ...next[id], status: "approved" };
+          idsToSend.push(id);
         }
       }
       return next;
     });
+    sendLiveApprovals(idsToSend);
     setSent(true);
   }
 
   /** Approve all checked (non-never) drafts in a single Crew section. */
   function approveSection(crewKey: CrewKey) {
+    const idsToSend: string[] = [];
     setItems((p) => {
       const next = { ...p };
-      for (const d of fixtureDrafts) {
+      for (const d of allDrafts) {
         if (d.crew !== crewKey) continue;
         const state = next[d.id];
-        if (state.checked && state.status !== "never") {
+        if (state && state.checked && state.status !== "never") {
           next[d.id] = { ...state, status: "approved" };
+          idsToSend.push(d.id);
         }
       }
       return next;
     });
+    sendLiveApprovals(idsToSend);
   }
 
   function selectAll(check: boolean) {
@@ -355,11 +493,13 @@ export default function MorningConnectPage() {
               <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {drafts.map((d) => {
                   const state = items[d.id];
+                  if (!state) return null;
                   return (
                     <DraftListItem
                       key={d.id}
                       draft={d}
                       state={state}
+                      isLive={liveIds.has(d.id)}
                       onToggleChecked={() => toggleChecked(d.id)}
                       onToggleExpanded={() => toggleExpanded(d.id)}
                       onEdit={(t) => setEdited(d.id, t)}
@@ -419,6 +559,7 @@ export default function MorningConnectPage() {
 function DraftListItem({
   draft,
   state,
+  isLive = false,
   onToggleChecked,
   onToggleExpanded,
   onEdit,
@@ -426,6 +567,7 @@ function DraftListItem({
 }: {
   draft: FixtureDraft;
   state: ItemState;
+  isLive?: boolean;
   onToggleChecked: () => void;
   onToggleExpanded: () => void;
   onEdit: (text: string) => void;
@@ -457,6 +599,17 @@ function DraftListItem({
         opacity: isNever ? 0.5 : 1,
       }}
     >
+      {/* Live "just drafted" badge */}
+      {isLive ? (
+        <div
+          className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-white"
+          style={{ backgroundColor: "var(--warmth-hot)" }}
+        >
+          <Zap className="h-2.5 w-2.5" strokeWidth={2.5} />
+          Just drafted
+        </div>
+      ) : null}
+
       {/* Checkbox top-right */}
       <label
         className="absolute top-3 right-3 z-10 cursor-pointer select-none"

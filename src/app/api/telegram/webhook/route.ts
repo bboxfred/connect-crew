@@ -70,6 +70,7 @@ export async function POST(req: Request): Promise<Response> {
       text: message.text,
       sender: message.from,
       sentAt: new Date(message.date * 1000),
+      chatId: message.chat.id,
     });
   } catch (err) {
     console.error("[telegram/webhook] processing failed:", err);
