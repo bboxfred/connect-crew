@@ -9,41 +9,57 @@ import {
   RotateCcw,
   Sparkles,
   Check,
-  ArrowRight,
   AlertCircle,
+  Mail,
+  ExternalLink,
 } from "lucide-react";
 import { fixtureCards } from "@/lib/fixtures";
 import { useGensparkPanel } from "@/components/genspark-side-panel";
 
 type Mode = "idle" | "camera" | "preview" | "processing" | "done" | "error";
 
-// The pre-scripted Genspark log for the demo. In live mode these come
-// back from real Claude + Genspark calls. Sources are deliberately
-// public-web-legal — no LinkedIn scraping, no gray-area data brokers.
-const GENSPARK_STEPS = [
-  "Claude reading card image",
-  "Claude extracting fields · 7 found",
-  "Genspark reading Helix Tech homepage",
-  "Genspark checking Crunchbase · Series A Feb 2025",
-  "Genspark searching recent press · 2 articles",
-  "Genspark finding mutual connections in your graph",
-  "Claude writing enriched profile",
-];
-
-// Pre-built fixture result Scan reveals on a successful stub run.
-// Enrichment preview pulls only from public-web-legal sources —
-// company site + Crunchbase + press + internal graph mutuals.
-const RESULT = {
-  name: "Sofia Alencar",
-  title: "Head of Partnerships",
-  company: "Helix Tech",
-  email: "sofia@helix.tech",
-  phone: "+65 9123 4567",
-  linkedin: "/in/sofia-alencar-helix",
-  enrichment_preview:
-    "Sequoia SEA Series A, Feb 2025 (Crunchbase + press). 2 mutuals in your graph: Marcus Low, Priya Raghavan.",
-  contact_id: "sofia",
+// Result shape returned by /api/scan on success.
+type ScanResult = {
+  ok: true;
+  contact: {
+    id: string;
+    name: string;
+    title: string | null;
+    company: string | null;
+    email: string | null;
+    phone: string | null;
+    linkedin: string | null;
+    telegram_handle: string | null;
+    warmth_index: number;
+    met_at: string | null;
+  };
+  enrichment:
+    | { status: "ok"; company_summary: string; sources_cited: string[] }
+    | { status: "skipped"; reason: string };
+  extract: { confidence: "high" | "medium" | "low"; found: number; total: number };
+  draft:
+    | {
+        status: "created";
+        id: string;
+        subject: string;
+        body: string;
+        gmail_url: string | null;
+        reasoning: string;
+      }
+    | { status: "skipped"; reason: string };
+  steps: string[];
 };
+
+type ScanErrorResponse = { ok: false; error: string; steps: string[] };
+
+// Shown in the side panel while the API roundtrip is in flight. Long
+// stepMs keeps the panel visible until the real server steps arrive.
+const WAITING_STEPS = [
+  "Claude reading card image",
+  "Claude extracting fields",
+  "Genspark enriching via public web",
+  "Filing in your graph",
+];
 
 export default function ScanPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,6 +68,9 @@ export default function ScanPage() {
 
   const [mode, setMode] = useState<Mode>("idle");
   const [image, setImage] = useState<string | null>(null);
+  const [metContext, setMetContext] = useState("");
+  const [result, setResult] = useState<ScanResult | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
   const panel = useGensparkPanel();
@@ -94,7 +113,9 @@ export default function ScanPage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    setImage(canvas.toDataURL("image/jpeg", 0.9));
+    // jpeg 0.85 — keeps payload under Vercel's 4.5MB body limit for
+    // ~720p cards, well under Anthropic's 5MB vision cap.
+    setImage(canvas.toDataURL("image/jpeg", 0.85));
     stopCamera();
     setMode("preview");
   }
@@ -110,33 +131,87 @@ export default function ScanPage() {
     reader.readAsDataURL(file);
   }
 
-  function process() {
+  async function process() {
+    if (!image) return;
     setMode("processing");
+    setErrorMessage(null);
+
+    // Long-stepped "working" panel — gives Claude + Genspark time to return
+    // without the panel finishing early. On real response we replace with
+    // the server's step log.
     panel.run({
       crew: "scan",
       title: "Scan · Claude + Genspark",
-      steps: GENSPARK_STEPS,
-      stepMs: 550,
-      autoDismissMs: null, // keep visible until we reset
-      onDone: () => {
-        setMode("done");
-      },
+      steps: WAITING_STEPS,
+      stepMs: 4500,
+      autoDismissMs: null,
     });
+
+    try {
+      const res = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageDataUrl: image,
+          metContext: metContext.trim() || null,
+        }),
+      });
+
+      const json = (await res.json()) as ScanResult | ScanErrorResponse;
+
+      if (!json.ok) {
+        // Replay the server's partial steps (e.g. "Claude vision failed: ...")
+        panel.run({
+          crew: "scan",
+          title: "Scan · couldn't read card",
+          steps: json.steps.length > 0 ? json.steps : ["Couldn't process card"],
+          stepMs: 350,
+          autoDismissMs: 1500,
+        });
+        setErrorMessage(json.error);
+        setMode("error");
+        return;
+      }
+
+      // Success — replace the waiting animation with the real step log.
+      panel.run({
+        crew: "scan",
+        title: "Scan · Claude + Genspark",
+        steps: json.steps,
+        stepMs: 450,
+        autoDismissMs: null,
+        onDone: () => setMode("done"),
+      });
+      setResult(json);
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Network error. Try again.";
+      panel.run({
+        crew: "scan",
+        title: "Scan · network error",
+        steps: [`Request failed: ${msg}`],
+        stepMs: 400,
+        autoDismissMs: 1500,
+      });
+      setErrorMessage(msg);
+      setMode("error");
+    }
   }
 
   function reset() {
     stopCamera();
     panel.close();
     setImage(null);
+    setMetContext("");
+    setResult(null);
+    setErrorMessage(null);
     setMode("idle");
     setCameraError(null);
   }
 
-  function simulateError() {
-    setMode("error");
-  }
-
-  const processedToday = fixtureCards.filter((c) => c.state === "complete").length;
+  const processedToday = fixtureCards.filter(
+    (c) => c.state === "complete",
+  ).length;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -154,12 +229,15 @@ export default function ScanPage() {
         >
           Scan a card.
           <br />
-          <span className="text-[var(--muted-strong)]">The Crew does the rest.</span>
+          <span className="text-[var(--muted-strong)]">
+            The Crew does the rest.
+          </span>
         </h1>
         <p className="mt-4 text-sm md:text-base text-[var(--muted-strong)] leading-relaxed max-w-2xl">
           Snap a photo with your camera or drop a file. Claude reads the card,
-          the web is searched for context, and the enriched record files
-          itself into your graph.
+          the web is searched for context, and — if there's an email — a warm
+          follow-up is staged in your Gmail drafts for you to review in Morning
+          Connect.
         </p>
       </header>
 
@@ -172,10 +250,15 @@ export default function ScanPage() {
               className="h-20 w-20 rounded-2xl flex items-center justify-center mb-6"
               style={{
                 backgroundColor: "color-mix(in srgb, var(--coral) 14%, white)",
-                border: "1px solid color-mix(in srgb, var(--coral) 30%, transparent)",
+                border:
+                  "1px solid color-mix(in srgb, var(--coral) 30%, transparent)",
               }}
             >
-              <Camera className="h-8 w-8" style={{ color: "var(--coral)" }} strokeWidth={1.5} />
+              <Camera
+                className="h-8 w-8"
+                style={{ color: "var(--coral)" }}
+                strokeWidth={1.5}
+              />
             </div>
             <h2
               className="font-editorial text-2xl md:text-3xl tracking-tight"
@@ -191,7 +274,8 @@ export default function ScanPage() {
               <div
                 className="mt-4 inline-flex items-center gap-2 text-xs font-mono rounded px-3 py-1.5"
                 style={{
-                  backgroundColor: "color-mix(in srgb, var(--indigo) 10%, white)",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--indigo) 10%, white)",
                   color: "var(--indigo)",
                 }}
               >
@@ -241,7 +325,6 @@ export default function ScanPage() {
                 playsInline
                 muted
               />
-              {/* Framing guide */}
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                 <div className="w-[70%] h-[45%] border-2 border-white/40 rounded-lg" />
               </div>
@@ -273,8 +356,10 @@ export default function ScanPage() {
         image ? (
           <div className="flex-1 flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-6 md:gap-8 p-6 md:p-8 flex-1">
-              {/* Card preview (shrinks after processing starts) */}
-              <div className={`${mode === "preview" ? "md:w-[360px]" : "md:w-[200px]"} w-full transition-all`}>
+              {/* Card preview */}
+              <div
+                className={`${mode === "preview" ? "md:w-[360px]" : "md:w-[220px]"} w-full transition-all`}
+              >
                 <div className="relative rounded-xl overflow-hidden shadow-md bg-[var(--paper)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -286,7 +371,8 @@ export default function ScanPage() {
                     <div
                       className="absolute top-3 right-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest"
                       style={{
-                        backgroundColor: "color-mix(in srgb, var(--sage) 95%, white)",
+                        backgroundColor:
+                          "color-mix(in srgb, var(--sage) 95%, white)",
                         color: "white",
                       }}
                     >
@@ -300,15 +386,15 @@ export default function ScanPage() {
                       className="h-3.5 w-3.5 anim-pulse-hot"
                       style={{ color: "var(--coral)" }}
                     />
-                    Claude is reading…
+                    Claude + Genspark working…
                   </div>
                 ) : null}
               </div>
 
-              {/* Result / empty */}
+              {/* Result / preview */}
               <div className="min-w-0">
                 {mode === "preview" ? (
-                  <div className="h-full flex flex-col justify-between">
+                  <div className="h-full flex flex-col">
                     <div>
                       <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted)] mb-3">
                         Ready to process
@@ -319,12 +405,28 @@ export default function ScanPage() {
                       >
                         Send this card to the Crew?
                       </h3>
-                      <p className="text-sm text-[var(--muted-strong)] leading-relaxed">
-                        Claude will read the card and extract fields.
-                        Genspark will enrich with LinkedIn, company, and
-                        mutual-connection data. You'll see each step in the
-                        side panel.
+                      <p className="text-sm text-[var(--muted-strong)] leading-relaxed mb-5">
+                        Claude reads the card. Genspark enriches the company
+                        from public web. If there&apos;s an email, a warm
+                        follow-up is staged in Gmail drafts.
                       </p>
+
+                      {/* Where did we meet? */}
+                      <label className="block mb-5">
+                        <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted)] block mb-1.5">
+                          Where did you meet? <span className="normal-case tracking-normal">(optional)</span>
+                        </span>
+                        <input
+                          type="text"
+                          value={metContext}
+                          onChange={(e) => setMetContext(e.target.value)}
+                          placeholder="e.g. TOKEN2049 · reception · ABA dinner"
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--paper)]/40 p-2.5 text-sm focus:outline-none focus:border-[var(--coral)] transition-colors"
+                        />
+                        <span className="block mt-1.5 text-[11px] text-[var(--muted)] leading-relaxed">
+                          Claude uses this to calibrate the follow-up draft. Skip if you don&apos;t want a draft.
+                        </span>
+                      </label>
                     </div>
                   </div>
                 ) : null}
@@ -336,64 +438,14 @@ export default function ScanPage() {
                     </div>
                     <p className="leading-relaxed">
                       Watch the Genspark side panel on the right for live
-                      progress. Claude + Genspark will exchange ~6 steps
-                      before the enriched profile lands.
+                      progress. Claude + Genspark + Composio exchange ~6 steps
+                      before the contact + draft land.
                     </p>
                   </div>
                 ) : null}
 
-                {mode === "done" ? (
-                  <div>
-                    <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--sage)] mb-3 flex items-center gap-1.5">
-                      <Check className="h-3 w-3" strokeWidth={3} />
-                      Claude extracted · Genspark enriched
-                    </div>
-                    <h3
-                      className="font-editorial text-xl md:text-2xl tracking-tight leading-tight mb-5"
-                      style={{ fontWeight: 600 }}
-                    >
-                      {RESULT.name}
-                    </h3>
-
-                    <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mb-5">
-                      {(
-                        [
-                          ["title", RESULT.title],
-                          ["company", RESULT.company],
-                          ["email", RESULT.email],
-                          ["phone", RESULT.phone],
-                          ["linkedin", RESULT.linkedin],
-                        ] as const
-                      ).map(([k, v]) => (
-                        <div
-                          key={k}
-                          className="grid grid-cols-[88px_1fr] gap-3 items-start"
-                        >
-                          <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)] pt-0.5">
-                            {k}
-                          </dt>
-                          <dd className="text-sm text-[var(--foreground)] break-all">
-                            {v}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-
-                    <div
-                      className="rounded-lg p-3 border font-mono text-[11px] leading-relaxed"
-                      style={{
-                        backgroundColor:
-                          "color-mix(in srgb, var(--sage) 6%, white)",
-                        borderColor: "color-mix(in srgb, var(--sage) 25%, transparent)",
-                        color: "var(--foreground)",
-                      }}
-                    >
-                      <span className="uppercase tracking-wider text-[var(--sage)] mr-1">
-                        Genspark note:
-                      </span>
-                      {RESULT.enrichment_preview}
-                    </div>
-                  </div>
+                {mode === "done" && result ? (
+                  <DoneView result={result} />
                 ) : null}
               </div>
             </div>
@@ -407,16 +459,6 @@ export default function ScanPage() {
                 >
                   <RotateCcw className="h-4 w-4" strokeWidth={2} /> Scan another
                 </button>
-                {mode === "preview" ? (
-                  <button
-                    type="button"
-                    onClick={simulateError}
-                    className="text-xs text-[var(--muted)] hover:text-[var(--foreground)] transition-colors ml-2"
-                    title="Trigger error state (demo)"
-                  >
-                    demo: trigger error
-                  </button>
-                ) : null}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 {mode === "preview" ? (
@@ -426,16 +468,18 @@ export default function ScanPage() {
                     className="inline-flex items-center gap-2 rounded-full text-white px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity"
                     style={{ backgroundColor: "var(--coral)" }}
                   >
-                    <Sparkles className="h-4 w-4" strokeWidth={2} /> Read with Claude
+                    <Sparkles className="h-4 w-4" strokeWidth={2} /> Read with
+                    Claude
                   </button>
                 ) : null}
-                {mode === "done" ? (
+                {mode === "done" && result ? (
                   <>
                     <Link
-                      href={`/app/contacts/${RESULT.contact_id}`}
+                      href="/app/morning-connect"
                       className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] px-4 py-2 text-sm text-[var(--foreground)] hover:border-[var(--foreground)] transition-colors"
                     >
-                      View contact <ArrowRight className="h-4 w-4" strokeWidth={2} />
+                      Review in Morning Connect{" "}
+                      <Mail className="h-4 w-4" strokeWidth={2} />
                     </Link>
                     <button
                       type="button"
@@ -459,44 +503,36 @@ export default function ScanPage() {
               className="h-16 w-16 rounded-2xl flex items-center justify-center mb-6"
               style={{
                 backgroundColor: "color-mix(in srgb, var(--indigo) 10%, white)",
-                border: "1px solid color-mix(in srgb, var(--indigo) 30%, transparent)",
+                border:
+                  "1px solid color-mix(in srgb, var(--indigo) 30%, transparent)",
               }}
             >
-              <AlertCircle className="h-7 w-7" style={{ color: "var(--indigo)" }} strokeWidth={1.5} />
+              <AlertCircle
+                className="h-7 w-7"
+                style={{ color: "var(--indigo)" }}
+                strokeWidth={1.5}
+              />
             </div>
             <h2
               className="font-editorial text-2xl tracking-tight"
               style={{ fontWeight: 600 }}
             >
-              Couldn't read this card clearly.
+              Couldn&apos;t read this card clearly.
             </h2>
             <p className="mt-3 text-sm text-[var(--muted-strong)] max-w-md leading-relaxed">
-              Text was below the OCR-confidence threshold. Try another photo
-              with better lighting, or enter the fields manually.
+              {errorMessage ??
+                "Text was below the OCR-confidence threshold. Try another photo with better lighting, or enter the fields manually."}
             </p>
 
-            <form className="mt-7 w-full max-w-md space-y-3 text-left">
-              <ManualField label="Name" />
-              <ManualField label="Title" />
-              <ManualField label="Company" />
-              <ManualField label="Email" />
-              <div className="flex items-center justify-end gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="rounded-full border border-[var(--border)] px-4 py-2 text-xs font-mono uppercase tracking-wider text-[var(--muted-strong)] hover:text-[var(--foreground)] hover:border-[var(--foreground)] transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 rounded-full text-white px-4 py-2 text-xs font-mono uppercase tracking-wider hover:opacity-90 transition-opacity"
-                  style={{ backgroundColor: "var(--coral)" }}
-                >
-                  Save manually
-                </button>
-              </div>
-            </form>
+            <div className="mt-7 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={reset}
+                className="rounded-full border border-[var(--border)] px-4 py-2 text-xs font-mono uppercase tracking-wider text-[var(--muted-strong)] hover:text-[var(--foreground)] hover:border-[var(--foreground)] transition-colors"
+              >
+                Try another photo
+              </button>
+            </div>
           </div>
         ) : null}
       </div>
@@ -505,7 +541,7 @@ export default function ScanPage() {
       {mode !== "camera" && mode !== "error" ? (
         <section className="mt-8">
           <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted)] mb-4">
-            Today's queue · {fixtureCards.length} cards
+            Today&apos;s queue · {fixtureCards.length} cards
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {fixtureCards.map((card) => (
@@ -543,16 +579,117 @@ export default function ScanPage() {
   );
 }
 
-function ManualField({ label }: { label: string }) {
+function DoneView({ result }: { result: ScanResult }) {
+  const { contact, enrichment, draft, extract } = result;
+
   return (
     <div>
-      <label className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted)] block mb-1.5">
-        {label}
-      </label>
-      <input
-        type="text"
-        className="w-full rounded-lg border border-[var(--border)] bg-[var(--paper)]/40 p-2 text-sm focus:outline-none focus:border-[var(--coral)] transition-colors"
-      />
+      <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--sage)] mb-3 flex items-center gap-1.5">
+        <Check className="h-3 w-3" strokeWidth={3} />
+        Claude extracted {extract.found}/{extract.total} · confidence{" "}
+        {extract.confidence}
+      </div>
+      <h3
+        className="font-editorial text-xl md:text-2xl tracking-tight leading-tight mb-5"
+        style={{ fontWeight: 600 }}
+      >
+        {contact.name}
+      </h3>
+
+      <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mb-5">
+        {(
+          [
+            ["title", contact.title],
+            ["company", contact.company],
+            ["email", contact.email],
+            ["phone", contact.phone],
+            ["linkedin", contact.linkedin],
+            ["telegram", contact.telegram_handle],
+          ] as const
+        )
+          .filter(([, v]) => v)
+          .map(([k, v]) => (
+            <div
+              key={k}
+              className="grid grid-cols-[88px_1fr] gap-3 items-start"
+            >
+              <dt className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)] pt-0.5">
+                {k}
+              </dt>
+              <dd className="text-sm text-[var(--foreground)] break-all">
+                {v}
+              </dd>
+            </div>
+          ))}
+      </dl>
+
+      {enrichment.status === "ok" ? (
+        <div
+          className="rounded-lg p-3 border font-mono text-[11px] leading-relaxed mb-3"
+          style={{
+            backgroundColor: "color-mix(in srgb, var(--sage) 6%, white)",
+            borderColor: "color-mix(in srgb, var(--sage) 25%, transparent)",
+            color: "var(--foreground)",
+          }}
+        >
+          <span className="uppercase tracking-wider text-[var(--sage)] mr-1">
+            Genspark:
+          </span>
+          {enrichment.company_summary}
+        </div>
+      ) : (
+        <div className="rounded-lg p-3 border border-[var(--border)] font-mono text-[11px] leading-relaxed mb-3 text-[var(--muted)]">
+          <span className="uppercase tracking-wider mr-1">Genspark:</span>
+          skipped — {enrichment.reason}
+        </div>
+      )}
+
+      {draft.status === "created" ? (
+        <div
+          className="rounded-lg p-3 border font-mono text-[11px] leading-relaxed"
+          style={{
+            backgroundColor: "color-mix(in srgb, var(--copper) 8%, white)",
+            borderColor: "color-mix(in srgb, var(--copper) 28%, transparent)",
+            color: "var(--foreground)",
+          }}
+        >
+          <div className="flex items-center gap-1.5 mb-1">
+            <Mail
+              className="h-3 w-3"
+              style={{ color: "var(--copper)" }}
+              strokeWidth={2.5}
+            />
+            <span className="uppercase tracking-wider text-[var(--copper)]">
+              Gmail draft staged · review in Morning Connect
+            </span>
+            {draft.gmail_url ? (
+              <a
+                href={draft.gmail_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto inline-flex items-center gap-1 text-[var(--muted)] hover:text-[var(--copper)] transition-colors"
+              >
+                Open in Gmail
+                <ExternalLink className="h-3 w-3" strokeWidth={2} />
+              </a>
+            ) : null}
+          </div>
+          <div className="text-[var(--muted-strong)] font-sans text-xs leading-relaxed whitespace-pre-wrap">
+            <div className="mb-1">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)]">
+                Subject ·
+              </span>{" "}
+              {draft.subject}
+            </div>
+            {draft.body}
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-lg p-3 border border-[var(--border)] font-mono text-[11px] leading-relaxed text-[var(--muted)]">
+          <span className="uppercase tracking-wider mr-1">Draft:</span>
+          skipped — {draft.reason}
+        </div>
+      )}
     </div>
   );
 }
