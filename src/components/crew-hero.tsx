@@ -22,13 +22,15 @@ import { cn } from "@/lib/utils";
 // render on top of the gradient slot.
 
 type MediaKind = "image" | "video" | null;
+// All 6 activated Apr 24 — cinematic portraits generated via
+// Genspark nano-banana-pro, served from /public/hero/{slug}.png
 const MEDIA_FILES: Record<string, { ext: string; kind: MediaKind }> = {
-  "master-connect": { ext: "", kind: null },
-  scan: { ext: "", kind: null },
-  signals: { ext: "", kind: null },
-  inbound: { ext: "", kind: null },
-  social: { ext: "", kind: null },
-  scribe: { ext: "", kind: null },
+  "master-connect": { ext: "png", kind: "image" },
+  scan: { ext: "png", kind: "image" },
+  signals: { ext: "png", kind: "image" },
+  inbound: { ext: "png", kind: "image" },
+  social: { ext: "png", kind: "image" },
+  scribe: { ext: "png", kind: "image" },
 };
 
 type CrewChar = {
@@ -215,7 +217,7 @@ export function CrewHero() {
                 {media.kind === "image" && media.ext ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
-                    src={`/crew/${c.slug}.${media.ext}`}
+                    src={`/hero/${c.slug}.${media.ext}`}
                     alt={c.name}
                     className="absolute inset-0 h-full w-full object-cover select-none"
                     draggable={false}
@@ -223,7 +225,7 @@ export function CrewHero() {
                 ) : null}
                 {media.kind === "video" && media.ext ? (
                   <video
-                    src={`/crew/${c.slug}.${media.ext}`}
+                    src={`/hero/${c.slug}.${media.ext}`}
                     className="absolute inset-0 h-full w-full object-cover"
                     autoPlay
                     loop

@@ -132,44 +132,27 @@ export default function Home() {
       </div>
 
       {/* ───────── What is Connect Crew · one-liner + paragraph ─────────
-          Backed by five softly drifting coloured blobs — one per Crew
-          signature hue — for a quiet ambient texture without any
-          cyberpunk-gradient-tech vibe. */}
+          Background: a looping Networking.mp4 with a warm-paper tint
+          overlay so text reads cleanly on top. */}
       <section className="border-t border-[var(--border)] relative overflow-hidden">
-        {/* Drifting crew-colour blobs */}
-        <div
+        {/* Looping networking video backdrop */}
+        <video
+          className="absolute inset-0 h-full w-full object-cover pointer-events-none"
+          src="/video/networking.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
           aria-hidden
-          className="absolute -top-20 left-[8%] h-72 w-72 rounded-full blur-3xl anim-drift-1 pointer-events-none"
-          style={{
-            backgroundColor: "color-mix(in srgb, var(--coral) 18%, transparent)",
-          }}
         />
+        {/* Readability overlay — warm-paper tint at partial opacity so
+            the video is visible but text stays legible on any frame */}
         <div
           aria-hidden
-          className="absolute top-10 right-[10%] h-80 w-80 rounded-full blur-3xl anim-drift-2 pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundColor: "color-mix(in srgb, var(--teal) 15%, transparent)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute bottom-0 left-[35%] h-64 w-64 rounded-full blur-3xl anim-drift-3 pointer-events-none"
-          style={{
-            backgroundColor: "color-mix(in srgb, var(--indigo) 14%, transparent)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute top-1/3 right-[30%] h-56 w-56 rounded-full blur-3xl anim-crew-pulse-a pointer-events-none"
-          style={{
-            backgroundColor: "color-mix(in srgb, var(--copper) 12%, transparent)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute bottom-10 right-[5%] h-60 w-60 rounded-full blur-3xl anim-crew-pulse-b pointer-events-none"
-          style={{
-            backgroundColor: "color-mix(in srgb, var(--sage) 14%, transparent)",
+            background:
+              "linear-gradient(180deg, color-mix(in srgb, var(--background) 82%, transparent) 0%, color-mix(in srgb, var(--background) 68%, transparent) 45%, color-mix(in srgb, var(--background) 78%, transparent) 100%)",
           }}
         />
 

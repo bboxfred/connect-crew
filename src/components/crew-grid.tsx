@@ -141,14 +141,8 @@ export function CrewGrid() {
 }
 
 function CrewTile({ tile, index }: { tile: Tile; index: number }) {
+  const { Icon } = tile;
   const isChief = tile.slug === "master-connect";
-  // Vary float animation class per index so cards don't move in lockstep.
-  const floatClass =
-    index % 3 === 0
-      ? "anim-crew-float-a"
-      : index % 3 === 1
-        ? "anim-crew-float-b"
-        : "anim-crew-float-c";
   const pulseClass =
     index % 2 === 0 ? "anim-crew-pulse-a" : "anim-crew-pulse-b";
   return (
@@ -159,7 +153,7 @@ function CrewTile({ tile, index }: { tile: Tile; index: number }) {
         borderColor: `color-mix(in srgb, ${tile.color} ${isChief ? 40 : 28}%, transparent)`,
         backgroundColor: `color-mix(in srgb, ${tile.color} ${isChief ? 6 : 4}%, white)`,
         animationDelay: `${index * 0.06}s`,
-        minHeight: 280,
+        minHeight: 260,
         boxShadow: isChief
           ? `0 1px 0 rgba(26,24,22,0.03), 0 32px 80px -24px color-mix(in srgb, ${tile.color} 35%, transparent)`
           : `0 1px 0 rgba(26,24,22,0.03), 0 18px 48px -24px color-mix(in srgb, ${tile.color} 25%, transparent)`,
@@ -168,44 +162,13 @@ function CrewTile({ tile, index }: { tile: Tile; index: number }) {
       {/* Corner glow — pulsing */}
       <div
         aria-hidden
-        className={`absolute -top-14 -right-14 h-40 w-40 rounded-full blur-3xl pointer-events-none ${pulseClass}`}
+        className={`absolute -top-14 -right-14 h-40 w-40 rounded-full blur-3xl opacity-25 pointer-events-none ${pulseClass}`}
         style={{ backgroundColor: tile.color }}
       />
 
-      {/* Secondary soft blob — opposite corner, slower */}
-      <div
-        aria-hidden
-        className={`absolute -bottom-20 -left-16 h-44 w-44 rounded-full blur-3xl opacity-20 pointer-events-none ${floatClass}`}
-        style={{
-          backgroundColor: `color-mix(in srgb, ${tile.color} 60%, white)`,
-        }}
-      />
-
-      {/* Generated Crew illustration — floats gently. mix-blend-mode
-          lets the cream paper background melt into the card tint so
-          only the coloured icon reads; scale(1.35) crops the wide
-          margins of the 1024x1024 source so the subject dominates. */}
-      <div
-        aria-hidden
-        className={`absolute -top-2 -right-2 h-40 w-40 md:h-48 md:w-48 pointer-events-none ${floatClass}`}
-        style={{ mixBlendMode: "multiply" }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`/crew/${tile.slug}.png`}
-          alt=""
-          className="h-full w-full object-contain"
-          style={{
-            transform: "scale(1.35)",
-            filter: `drop-shadow(0 8px 22px color-mix(in srgb, ${tile.color} 30%, transparent))`,
-          }}
-          draggable={false}
-        />
-      </div>
-
       <div className="relative flex-1 flex flex-col">
-        {/* Top row: number + role badge. The old small icon box is now
-            the generated illustration in the absolute top-right. */}
+        {/* Top row: number + role badge + small icon (reverted — no more
+            embedded illustration, hero-level imagery lives up top) */}
         <div className="flex items-start justify-between mb-5">
           <div className="flex items-center gap-2">
             <span
@@ -226,8 +189,19 @@ function CrewTile({ tile, index }: { tile: Tile; index: number }) {
               </span>
             ) : null}
           </div>
-          {/* Spacer to reserve room for the illustration */}
-          <div className="h-10 w-28 md:w-32 shrink-0" aria-hidden />
+          <div
+            className="h-10 w-10 rounded-2xl flex items-center justify-center shrink-0"
+            style={{
+              backgroundColor: `color-mix(in srgb, ${tile.color} 14%, white)`,
+              border: `1px solid color-mix(in srgb, ${tile.color} 30%, transparent)`,
+            }}
+          >
+            <Icon
+              className="h-5 w-5"
+              strokeWidth={1.75}
+              style={{ color: tile.color }}
+            />
+          </div>
         </div>
 
         {/* Name */}
