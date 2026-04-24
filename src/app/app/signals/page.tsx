@@ -88,7 +88,7 @@ export default function MessengerPage() {
         <LiveClassificationCard accentColor={crew.color} />
       </div>
 
-      {/* Note to hackathon judges — first-person from Freddy · red accent */}
+      {/* Note to hackathon judges — short, first-person from Freddy · red */}
       <aside
         className="rounded-2xl border p-5 md:p-6 anim-fade-up"
         style={{
@@ -105,138 +105,21 @@ export default function MessengerPage() {
           />
           <div className="min-w-0">
             <div
-              className="font-mono text-[10px] uppercase tracking-widest mb-3"
+              className="font-mono text-[10px] uppercase tracking-widest mb-2"
               style={{ color: "var(--warmth-hot)" }}
             >
               Note to hackathon judges
             </div>
-
-            <p className="text-sm text-[var(--foreground)] leading-relaxed mb-4">
-              Hey — quick context on why this page is marked{" "}
-              <em>demo mode</em> instead of fully live.
+            <p className="text-sm text-[var(--foreground)] leading-relaxed">
+              What you&apos;re looking at here is a demo. The full version
+              runs on <strong>WhatsApp&apos;s official Business Cloud API</strong>
+              {" "}and <strong>Telegram MTProto</strong> — both require a
+              few days of registration / verification I couldn&apos;t fit
+              into this 5-hour window. Same classifier, same UI, same
+              Morning Connect hand-off. Just not on my own outbound messages
+              today.
             </p>
-
-            <div className="space-y-4 mb-4">
-              <div>
-                <div
-                  className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
-                  style={{ color: "var(--warmth-hot)" }}
-                >
-                  What I want to ship
-                </div>
-                <p className="text-sm text-[var(--foreground)] leading-relaxed">
-                  I&apos;m chatting with Sofia on Telegram. I drop my cue{" "}
-                  <code className="font-mono text-[12px] px-1 py-0.5 rounded bg-[var(--paper)]">
-                    Hi!!
-                  </code>{" "}
-                  in my outbound message. Connect Crew catches it and drafts
-                  a richer follow-up — my deck attached, a calendar link,
-                  calibrated to what we just discussed. It lands in Morning
-                  Connect for my approval, or auto-sends if I&apos;ve set
-                  green-tier autonomy on her contact.
-                </p>
-              </div>
-
-              <div>
-                <div
-                  className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
-                  style={{ color: "var(--warmth-hot)" }}
-                >
-                  The wall I ran into
-                </div>
-                <p className="text-sm text-[var(--foreground)] leading-relaxed">
-                  Every major messaging protocol walls off peer-to-peer
-                  outbound capture for privacy reasons. Telegram&apos;s Bot
-                  API (what&apos;s live below) only sees messages sent{" "}
-                  <em>to</em> the bot — my DMs to Sofia are invisible to it.
-                  Each channel has an official engineering path to solve it;
-                  they just need more time than this 5-hour window:
-                </p>
-                <ul className="mt-2 space-y-1.5 text-sm text-[var(--foreground)] leading-relaxed list-disc pl-5">
-                  <li>
-                    <strong>WhatsApp</strong> — Meta&apos;s official Business
-                    / Cloud API handles the cue capture and outbound send.
-                    Just needs the 3–5 day Meta verification to go live on my
-                    business number. Production-ready once verified, no ToS
-                    gray areas.
-                  </li>
-                  <li>
-                    <strong>Telegram</strong> — MTProto user-API reads my
-                    outbound directly. 4–6 hours to wire the phone-number
-                    login flow safely.
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <div
-                  className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
-                  style={{ color: "var(--warmth-hot)" }}
-                >
-                  The tradeoff I made
-                </div>
-                <p className="text-sm text-[var(--foreground)] leading-relaxed">
-                  Burn the remaining hackathon window getting MTProto wired
-                  for one demo beat — or ship three acts that actually work
-                  end-to-end (Scanner, the Messenger classifier below, and
-                  Master Connect) plus this honest roadmap for the cue UX.
-                  I picked honest over complete.
-                </p>
-              </div>
-
-              <div>
-                <div
-                  className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
-                  style={{ color: "var(--warmth-hot)" }}
-                >
-                  How to see it working today
-                </div>
-                <ul className="space-y-1.5 text-sm text-[var(--foreground)] leading-relaxed list-disc pl-5">
-                  <li>
-                    Use the <strong>Simulate</strong> buttons above — they
-                    fire real Claude classification against the real
-                    11-signal taxonomy, on canned cue messages.
-                  </li>
-                  <li>
-                    Or DM{" "}
-                    <code className="font-mono text-[12px] px-1 py-0.5 rounded bg-[var(--paper)]">
-                      @ConnectC_bot
-                    </code>{" "}
-                    directly — same classifier, triggered by inbound-to-bot
-                    DMs instead of my outbound.
-                  </li>
-                  <li>
-                    The <strong>cue-branching</strong> section on the landing
-                    page shows the output side: the same inbound word{" "}
-                    <code className="font-mono text-[11px]">Hi</code> /{" "}
-                    <code className="font-mono text-[11px]">Hi!</code> /{" "}
-                    <code className="font-mono text-[11px]">Hi!!</code>{" "}
-                    branches to three different calibrated reply drafts. That
-                    visual is the whole thesis.
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <div
-                  className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
-                  style={{ color: "var(--warmth-hot)" }}
-                >
-                  Post-hackathon path
-                </div>
-                <p className="text-sm text-[var(--foreground)] leading-relaxed">
-                  Gmail ships first — no wall, Composio already handles the
-                  draft side, I just need to watch my sent folder. WhatsApp
-                  Business Cloud API is on a parallel 3-5 day async track
-                  (Meta verification in flight). Telegram MTProto follows
-                  once a beta user actually asks for it on that channel.
-                  Three channels, one cue-detection engine, same classifier
-                  under the hood.
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-[var(--hairline)] font-editorial text-sm text-[var(--muted-strong)] italic">
+            <div className="mt-3 font-editorial text-sm text-[var(--muted-strong)] italic">
               — Freddy
             </div>
           </div>
