@@ -10,7 +10,6 @@ import { CueBranching } from "@/components/cue-branching";
 import { CrewGrid } from "@/components/crew-grid";
 import { MasterConnectLanding } from "@/components/master-connect-landing";
 import { TierBlock } from "@/components/tier-block";
-import { WovenCanvas } from "@/components/woven-canvas";
 import { HomeLoader } from "@/components/home-loader";
 
 const soloTier = {
@@ -118,41 +117,18 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ───────── Hero — animated Crew character line-up ─────────
-          Wrapped in a relative container with a dark-blue→warm-paper
-          gradient backdrop + interactive Three.js particle canvas.
-          The hero content (CrewHero + CTA) sits on top. */}
-      <div className="relative overflow-hidden">
-        {/* Gradient backdrop — dark navy fades into the paper background.
-            The CTA section and everything below sees var(--background)
-            via the 100% stop. */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(180deg, #0a1230 0%, #15204a 25%, #2a3870 50%, color-mix(in srgb, var(--background) 70%, #2a3870) 75%, var(--background) 100%)",
-          }}
-          aria-hidden
-        />
-        {/* Interactive particle canvas — transparent, draws over the
-            gradient. Mouse-repel effect. */}
-        <WovenCanvas className="absolute inset-0 pointer-events-auto" />
+      {/* ───────── Hero — animated Crew character line-up ───────── */}
+      <CrewHero />
 
-        {/* Hero content sits above the canvas */}
-        <div className="relative z-10">
-          <CrewHero />
-
-          {/* Primary CTA — jump straight into the product */}
-          <div className="mx-auto w-full max-w-5xl px-6 pb-16 flex items-center justify-center">
-            <Link
-              href="/app"
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--ink)] px-7 py-3.5 text-base font-medium text-[var(--background)] hover:opacity-90 transition-opacity shadow-lg hover:shadow-xl"
-            >
-              Open Dashboard{" "}
-              <ArrowRight className="h-5 w-5" strokeWidth={2} />
-            </Link>
-          </div>
-        </div>
+      {/* Primary CTA — jump straight into the product */}
+      <div className="mx-auto w-full max-w-5xl px-6 pb-16 flex items-center justify-center">
+        <Link
+          href="/app"
+          className="inline-flex items-center gap-2 rounded-full bg-[var(--ink)] px-7 py-3.5 text-base font-medium text-[var(--background)] hover:opacity-90 transition-opacity shadow-lg hover:shadow-xl"
+        >
+          Open Dashboard{" "}
+          <ArrowRight className="h-5 w-5" strokeWidth={2} />
+        </Link>
       </div>
 
       {/* ───────── What is Connect Crew · one-liner + paragraph ───────── */}
@@ -185,39 +161,41 @@ export default function Home() {
         </p>
       </section>
 
-      {/* ───────── Long-quote banner · the "47 met, remember 8" line ───────── */}
+      {/* ───────── The problem · narrow scrolling-marquee quote banner ───────── */}
       <section
-        className="border-t border-b border-[var(--border)] w-full"
+        className="marquee border-t border-b border-[var(--border)] w-full py-4 md:py-5"
         style={{
           background:
-            "linear-gradient(180deg, color-mix(in srgb, var(--coral) 6%, white) 0%, color-mix(in srgb, var(--terracotta) 4%, white) 100%)",
+            "linear-gradient(90deg, color-mix(in srgb, var(--coral) 6%, white) 0%, color-mix(in srgb, var(--terracotta) 4%, white) 100%)",
         }}
+        aria-label="The problem"
       >
-        <div className="mx-auto w-full max-w-5xl px-6 py-20 md:py-28">
-          <div
-            className="font-mono text-[11px] tracking-widest uppercase mb-6"
-            style={{ color: "var(--coral)" }}
-          >
-            The problem
-          </div>
-          <blockquote className="font-editorial text-3xl md:text-5xl leading-[1.1] tracking-tight text-[var(--ink)] max-w-4xl">
-            <span className="text-[var(--coral)]">&ldquo;</span>
-            You met{" "}
-            <span style={{ color: "var(--coral)" }}>forty-seven</span> people
-            this month.
-            <br />
-            You will remember{" "}
-            <span style={{ color: "var(--ink)" }}>eight</span>.
-            <br />
-            <span className="text-[var(--muted-strong)] text-2xl md:text-4xl">
-              Your team of four will have lost another hundred and fifty
-              between you.
-            </span>
-            <span className="text-[var(--coral)]">&rdquo;</span>
-          </blockquote>
-          <div className="mt-8 font-mono text-[11px] tracking-widest uppercase text-[var(--muted)]">
-            — Connect Crew · the operating theory
-          </div>
+        <div className="marquee-track">
+          {Array.from({ length: 2 }).map((_, dup) => (
+            <div
+              key={dup}
+              className="flex items-center gap-12 pr-12 whitespace-nowrap font-editorial text-xl md:text-2xl tracking-tight text-[var(--ink)]"
+            >
+              {Array.from({ length: 3 }).map((_, i) => (
+                <span
+                  key={`${dup}-${i}`}
+                  className="flex items-center gap-4"
+                  style={{ fontWeight: 500 }}
+                >
+                  <span className="text-[var(--coral)]">&ldquo;</span>You met{" "}
+                  <span style={{ color: "var(--coral)" }}>forty-seven</span>{" "}
+                  people this month. You will remember{" "}
+                  <span style={{ color: "var(--ink)", fontWeight: 700 }}>eight</span>.
+                  Your team of four will have lost another hundred and fifty
+                  between you.
+                  <span className="text-[var(--coral)]">&rdquo;</span>
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted)] mx-4">
+                    · the problem ·
+                  </span>
+                </span>
+              ))}
+            </div>
+          ))}
         </div>
       </section>
 
