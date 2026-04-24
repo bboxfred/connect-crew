@@ -45,15 +45,19 @@ type InteractionRow = {
 
 type SimulateTone = "hot" | "warm" | "neutral" | "cooling";
 
+// Each simulate variant fires the LITERAL trigger text as the inbound.
+// That way the pipeline's trigger matcher finds the matching Secret
+// Signals rule and fires ITS preset reply_template verbatim — so
+// what you see back matches exactly what you set in the panel above.
 const SIMULATE_VARIANTS: Array<{
   label: string;
   text: string;
   hint: SimulateTone;
 }> = [
-  { label: "Hi!!", text: "Hi!! 🔥 Free for a coffee this week?", hint: "hot" },
-  { label: "Hi!", text: "Hi! Great seeing you — want to catch up soon?", hint: "warm" },
-  { label: "Hi.", text: "Hi. Noted.", hint: "neutral" },
-  { label: "Hi...", text: "Hi... been a while.", hint: "cooling" },
+  { label: "Hi!!", text: "Hi!!", hint: "hot" },
+  { label: "Hi!", text: "Hi!", hint: "warm" },
+  { label: "Hi", text: "Hi", hint: "neutral" },
+  { label: "Hi...", text: "Hi...", hint: "cooling" },
 ];
 
 export function LiveClassificationCard({

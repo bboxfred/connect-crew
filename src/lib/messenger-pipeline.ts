@@ -17,6 +17,47 @@ import { applyDelta } from "./warmth";
 import { draftMessengerReply } from "./messenger-drafter";
 import type { MessengerDraft } from "./messenger-drafter";
 import { createGmailDraft } from "./composio";
+import {
+  fixtureSecretSignals,
+  type SecretSignalRule,
+  type SignalScope,
+} from "./fixtures";
+
+/**
+ * Match an inbound message text to the most specific active Secret
+ * Signals trigger (for the given scope) that has a non-empty
+ * reply_template set. Used by the pipeline to fire the user's preset
+ * reply verbatim when they've configured one — falls through to the
+ * Claude drafter otherwise.
+ *
+ * Matching rule: case-insensitive substring, ordered by condition
+ * length descending so "Hi!!" beats "Hi!" beats "Hi" when all three
+ * are present.
+ */
+function findMatchingTrigger(
+  text: string,
+  scope: SignalScope,
+): SecretSignalRule | null {
+  const lower = text.toLowerCase().trim();
+  if (!lower) return null;
+
+  const candidates = fixtureSecretSignals
+    .filter((r) => r.scope === scope || r.scope === "all")
+    .filter((r) => r.active !== false)
+    .filter(
+      (r) =>
+        typeof r.reply_template === "string" &&
+        r.reply_template.trim().length > 0,
+    )
+    .sort((a, b) => b.condition.length - a.condition.length);
+
+  for (const rule of candidates) {
+    if (lower.includes(rule.condition.toLowerCase().trim())) {
+      return rule;
+    }
+  }
+  return null;
+}
 
 export type TelegramSender = {
   id: number;
@@ -245,23 +286,42 @@ async function maybeDraftReply(input: {
   const channel: "telegram" | "gmail" = input.contactEmail ? "gmail" : "telegram";
 
   let written: MessengerDraft;
-  try {
-    written = await draftMessengerReply({
-      contactName: input.contactName,
-      contactCompany: input.contactCompany,
-      contactEmail: input.contactEmail,
-      metAt: input.contactMetAt,
-      inboundText: input.inboundText,
-      channel,
-      tier,
-      signalsDetected: input.classification.signals_detected,
-      reasoning: input.classification.reasoning,
-      warmthScore: input.newWarmth,
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "drafter failed";
-    console.error("[messenger-pipeline] drafter failed:", err);
-    return { status: "skipped", reason: msg };
+
+  // First — does the inbound match one of the user's Secret Signal
+  // triggers with a preset reply_template? If so, fire that verbatim.
+  // Otherwise hand off to Claude to draft dynamically.
+  const matchedTrigger = findMatchingTrigger(input.inboundText, "telegram");
+
+  if (matchedTrigger && matchedTrigger.reply_template) {
+    written = {
+      subject: null,
+      body: matchedTrigger.reply_template,
+      reasoning: `Matched your preset trigger "${matchedTrigger.condition}". Fired the reply template you set for this signal.`,
+      calibration_trace: [
+        `matched trigger: "${matchedTrigger.condition}"`,
+        "preset reply template fired",
+        `delta ${matchedTrigger.delta >= 0 ? "+" : ""}${matchedTrigger.delta}`,
+      ],
+    };
+  } else {
+    try {
+      written = await draftMessengerReply({
+        contactName: input.contactName,
+        contactCompany: input.contactCompany,
+        contactEmail: input.contactEmail,
+        metAt: input.contactMetAt,
+        inboundText: input.inboundText,
+        channel,
+        tier,
+        signalsDetected: input.classification.signals_detected,
+        reasoning: input.classification.reasoning,
+        warmthScore: input.newWarmth,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "drafter failed";
+      console.error("[messenger-pipeline] drafter failed:", err);
+      return { status: "skipped", reason: msg };
+    }
   }
 
   // If Gmail channel + email present, stage in Gmail Drafts via Composio.
