@@ -247,7 +247,7 @@ export function SecretSignalsPanel({
           <span>
             Message triggers
             <span className="text-[var(--muted)] ml-2 normal-case tracking-normal">
-              · {rules.length} rule{rules.length === 1 ? "" : "s"}
+              · {rules.length} keyword{rules.length === 1 ? "" : "s"}
             </span>
           </span>
         </div>

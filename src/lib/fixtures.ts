@@ -2130,13 +2130,13 @@ export const SIGNAL_CATEGORY_LABEL: Record<SignalCategory, string> = {
 };
 
 export const fixtureSecretSignals: SecretSignalRule[] = [
-  // ─── Punctuation / message-content triggers — Messenger (Telegram / WhatsApp) ───
-  // Every rule is a literal match on the inbound message content. Replies
-  // are presets the user can edit; leave blank and Claude drafts dynamically.
+  // ─── Messenger (Telegram / WhatsApp) keyword triggers ───
+  // Each trigger is the literal inbound text. Replies are presets the
+  // user can edit inline; leave blank and Claude drafts dynamically.
   {
     id: "sig-msg-hi2",
     category: "punctuation",
-    condition: '"Hi!!" — hot / hot-lead',
+    condition: "Hi!!",
     delta: 6,
     scope: "telegram",
     active: true,
@@ -2146,7 +2146,7 @@ export const fixtureSecretSignals: SecretSignalRule[] = [
   {
     id: "sig-msg-hi1",
     category: "punctuation",
-    condition: '"Hi!" — warm / engaged',
+    condition: "Hi!",
     delta: 3,
     scope: "telegram",
     active: true,
@@ -2156,7 +2156,7 @@ export const fixtureSecretSignals: SecretSignalRule[] = [
   {
     id: "sig-msg-hi0",
     category: "punctuation",
-    condition: '"Hi" — neutral / measured',
+    condition: "Hi",
     delta: 1,
     scope: "telegram",
     active: true,
@@ -2164,39 +2164,10 @@ export const fixtureSecretSignals: SecretSignalRule[] = [
       "Hi — thanks for reaching out. What can I help with?\n\nFreddy",
   },
   {
-    id: "sig-msg-hidot",
-    category: "punctuation",
-    condition: '"Hi." — cold / curt',
-    delta: 0,
-    scope: "telegram",
-    active: true,
-    reply_template: "",
-  },
-  {
     id: "sig-msg-hidots",
     category: "punctuation",
-    condition: '"Hi..." — cooling / hesitant',
+    condition: "Hi...",
     delta: -2,
-    scope: "telegram",
-    active: true,
-    reply_template: "",
-  },
-
-  // ─── Emoji content triggers — Messenger ───
-  {
-    id: "sig-msg-fire",
-    category: "emoji",
-    condition: "🔥 in message",
-    delta: 3,
-    scope: "telegram",
-    active: true,
-    reply_template: "",
-  },
-  {
-    id: "sig-msg-pray",
-    category: "emoji",
-    condition: "🙏 or 🙌 (gratitude)",
-    delta: 2,
     scope: "telegram",
     active: true,
     reply_template: "",
@@ -2207,7 +2178,7 @@ export const fixtureSecretSignals: SecretSignalRule[] = [
   {
     id: "sig-soc-hi0",
     category: "punctuation",
-    condition: '"Hi" — cold / stranger',
+    condition: "Hi",
     delta: 0,
     scope: "social",
     active: true,
@@ -2217,7 +2188,7 @@ export const fixtureSecretSignals: SecretSignalRule[] = [
   {
     id: "sig-soc-hi1",
     category: "punctuation",
-    condition: '"Hi!" — warm',
+    condition: "Hi!",
     delta: 3,
     scope: "social",
     active: true,
@@ -2227,7 +2198,7 @@ export const fixtureSecretSignals: SecretSignalRule[] = [
   {
     id: "sig-soc-hi2",
     category: "punctuation",
-    condition: '"Hi!!" — very warm',
+    condition: "Hi!!",
     delta: 6,
     scope: "social",
     active: true,

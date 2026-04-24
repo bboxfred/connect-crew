@@ -213,6 +213,133 @@ export async function researchCompany(input: {
   };
 }
 
+// ── Audio: AI Drive upload + transcription ───────────────────────────────
+
+export type DriveUploadResult =
+  | { status: "ok"; path: string }
+  | { status: "skipped"; reason: string };
+
+/**
+ * Upload a binary buffer to Genspark's AI Drive as base64 payload.
+ * Returns the AI Drive path (e.g. "/scribe/note-1234.m4a") which can
+ * then be passed to `transcribeAudio` directly — no separate
+ * get_readable_url step needed.
+ *
+ * CLI size cap: 5MB absolute. We guard slightly tighter (4MB) to
+ * leave argv headroom for the base64 expansion.
+ */
+export async function uploadAudioToDrive(input: {
+  bytes: Buffer;
+  uploadPath: string;
+}): Promise<DriveUploadResult> {
+  const MAX = 4 * 1024 * 1024;
+  if (input.bytes.byteLength > MAX) {
+    return {
+      status: "skipped",
+      reason: `audio is ${Math.round(input.bytes.byteLength / 1024)}KB — limit is ${MAX / 1024}KB`,
+    };
+  }
+  const base64 = input.bytes.toString("base64");
+  const result = await runGsk<unknown>(
+    [
+      "drive",
+      "upload",
+      "--file_content",
+      `base64:${base64}`,
+      "--upload_path",
+      input.uploadPath,
+    ],
+    60_000,
+  );
+  if (!result.ok) {
+    return { status: "skipped", reason: result.reason };
+  }
+  // CLI response shape (best-effort parse). Different gsk versions nest
+  // the path under .data / .data.path / .result.path.
+  const flat = result.data as Record<string, unknown> | null;
+  const path =
+    (flat?.path as string | undefined) ??
+    ((flat?.data as Record<string, unknown> | undefined)?.path as
+      | string
+      | undefined) ??
+    ((flat?.result as Record<string, unknown> | undefined)?.path as
+      | string
+      | undefined) ??
+    input.uploadPath;
+  return { status: "ok", path };
+}
+
+export type TranscribeResult =
+  | { status: "ok"; transcript: string; raw: unknown }
+  | { status: "skipped"; reason: string };
+
+/**
+ * Transcribe an audio file already on AI Drive (or any public URL) via
+ * `gsk transcribe`. Returns the concatenated text.
+ */
+export async function transcribeAudio(input: {
+  audioPath: string;
+  model?: "whisper-1" | "gemini-3-flash-preview" | "elevenlabs_scribe_v2";
+  prompt?: string;
+}): Promise<TranscribeResult> {
+  const model = input.model ?? "whisper-1";
+  const args = ["transcribe", "-i", input.audioPath, "-m", model];
+  if (input.prompt) {
+    args.push("--prompt", input.prompt);
+  }
+  const result = await runGsk<unknown>(args, 120_000);
+  if (!result.ok) {
+    return { status: "skipped", reason: result.reason };
+  }
+  const transcript = extractTranscriptText(result.data);
+  if (!transcript) {
+    return {
+      status: "skipped",
+      reason: "transcribe returned no text",
+    };
+  }
+  return { status: "ok", transcript, raw: result.data };
+}
+
+/**
+ * Best-effort extractor for the transcript text out of the JSON
+ * envelope. The exact shape varies across models (whisper-1 returns
+ * `{ data: { text, segments } }`; elevenlabs returns
+ * `{ data: { transcript } }`). We walk common paths + fall back to
+ * stringified output.
+ */
+function extractTranscriptText(raw: unknown): string | null {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, unknown>;
+
+  const candidates: unknown[] = [
+    obj.text,
+    obj.transcript,
+    (obj.data as Record<string, unknown> | undefined)?.text,
+    (obj.data as Record<string, unknown> | undefined)?.transcript,
+    (obj.result as Record<string, unknown> | undefined)?.text,
+    (obj.result as Record<string, unknown> | undefined)?.transcript,
+  ];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim().length > 0) return c.trim();
+  }
+
+  // Whisper-style: { data: { segments: [{ text: "..." }, ...] } }
+  const data = obj.data as Record<string, unknown> | undefined;
+  const segments = (data?.segments ?? obj.segments) as
+    | Array<{ text?: string }>
+    | undefined;
+  if (Array.isArray(segments) && segments.length > 0) {
+    const joined = segments
+      .map((s) => (typeof s?.text === "string" ? s.text : ""))
+      .join(" ")
+      .trim();
+    if (joined.length > 0) return joined;
+  }
+
+  return null;
+}
+
 // ── Image generation (for Crew portraits / ad-hoc assets) ────────────────
 
 export type ImageGenResult =
