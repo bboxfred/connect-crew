@@ -11,6 +11,7 @@ import { CrewGrid } from "@/components/crew-grid";
 import { MasterConnectLanding } from "@/components/master-connect-landing";
 import { TierBlock } from "@/components/tier-block";
 import { WovenCanvas } from "@/components/woven-canvas";
+import { HomeLoader } from "@/components/home-loader";
 
 const soloTier = {
   name: "Solo",
@@ -83,6 +84,9 @@ const enterpriseTier = {
 export default function Home() {
   return (
     <main className="flex flex-col paper-grain">
+      {/* Brand loading splash — fades out once fonts + visuals are ready */}
+      <HomeLoader />
+
       {/* Top color rail — five Crew colors with a shimmer sweep */}
       <div className="h-1 w-full rail-animated" aria-hidden />
 
@@ -151,43 +155,68 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ───────── The problem — with coral pull-quote block ───────── */}
-      <section className="border-t border-[var(--border)] mx-auto w-full max-w-5xl px-6 py-20 md:py-24">
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr] gap-12 md:gap-20 items-start">
-          <div>
-            <div className="font-mono text-xs tracking-widest uppercase text-[var(--muted)] mb-6">
-              The problem
-            </div>
-            <div
-              className="relative rounded-2xl p-8 md:p-10"
-              style={{
-                backgroundColor: "color-mix(in srgb, var(--coral) 8%, white)",
-                borderLeft: "4px solid var(--coral)",
-              }}
-            >
-              <h2 className="font-editorial text-3xl md:text-4xl leading-tight tracking-tight">
-                You met{" "}
-                <span style={{ color: "var(--coral)" }}>forty-seven</span>{" "}
-                people this month.
-                <br />
-                You will remember{" "}
-                <span style={{ color: "var(--ink)" }}>eight</span>.
-              </h2>
-            </div>
+      {/* ───────── What is Connect Crew · one-liner + paragraph ───────── */}
+      <section className="border-t border-[var(--border)] mx-auto w-full max-w-4xl px-6 py-20 md:py-24">
+        <div
+          className="font-mono text-xs tracking-widest uppercase mb-5"
+          style={{ color: "var(--coral)" }}
+        >
+          What is Connect Crew
+        </div>
+        <h2 className="font-editorial text-3xl md:text-5xl leading-[1.05] tracking-tight mb-6">
+          A Chief and a Crew of AI specialists that keep every
+          relationship you&apos;ve ever made{" "}
+          <span
+            className="gradient-animated"
+            style={{ backgroundImage: "linear-gradient(90deg, var(--coral), var(--teal), var(--indigo))" }}
+          >
+            alive, warm, and queryable
+          </span>
+          .
+        </h2>
+        <p className="text-lg md:text-xl text-[var(--muted-strong)] leading-relaxed max-w-3xl">
+          Scanner files the card. Messenger reads the cue. Mailbox
+          qualifies the inbound. Social Media catches the DM. Scribe turns
+          the voice note into a follow-up email. The Chief — Master
+          Connect — lets anyone on your team ask the whole graph a
+          question: <em>&ldquo;who has a warm contact at Sequoia?&rdquo;</em>
+          &nbsp;Ten minutes in Morning Connect each day, and your
+          relationships stop slipping through the cracks.
+        </p>
+      </section>
+
+      {/* ───────── Long-quote banner · the "47 met, remember 8" line ───────── */}
+      <section
+        className="border-t border-b border-[var(--border)] w-full"
+        style={{
+          background:
+            "linear-gradient(180deg, color-mix(in srgb, var(--coral) 6%, white) 0%, color-mix(in srgb, var(--terracotta) 4%, white) 100%)",
+        }}
+      >
+        <div className="mx-auto w-full max-w-5xl px-6 py-20 md:py-28">
+          <div
+            className="font-mono text-[11px] tracking-widest uppercase mb-6"
+            style={{ color: "var(--coral)" }}
+          >
+            The problem
           </div>
-          <div className="space-y-5 text-[var(--foreground)]/85 leading-relaxed">
-            <p>
-              Every event fills your camera roll with business cards and your
-              Telegram with new chats. Inside a week, the context is gone. By
-              month two, so is the relationship.
-            </p>
-            <p>
-              The fix is not another CRM. A CRM is a filing cabinet; what you
-              need is a Crew that keeps the relationships warm while you do
-              the next thing. Six Crew members, one shared graph of every
-              person you have ever met, and a ten-minute daily review — or
-              full autonomy — that puts you back in control.
-            </p>
+          <blockquote className="font-editorial text-3xl md:text-5xl leading-[1.1] tracking-tight text-[var(--ink)] max-w-4xl">
+            <span className="text-[var(--coral)]">&ldquo;</span>
+            You met{" "}
+            <span style={{ color: "var(--coral)" }}>forty-seven</span> people
+            this month.
+            <br />
+            You will remember{" "}
+            <span style={{ color: "var(--ink)" }}>eight</span>.
+            <br />
+            <span className="text-[var(--muted-strong)] text-2xl md:text-4xl">
+              Your team of four will have lost another hundred and fifty
+              between you.
+            </span>
+            <span className="text-[var(--coral)]">&rdquo;</span>
+          </blockquote>
+          <div className="mt-8 font-mono text-[11px] tracking-widest uppercase text-[var(--muted)]">
+            — Connect Crew · the operating theory
           </div>
         </div>
       </section>
