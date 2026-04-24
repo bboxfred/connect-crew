@@ -38,13 +38,18 @@ type InteractionRow = {
   } | null;
 };
 
-const SIMULATE_VARIANTS: Array<{ label: string; text: string; hint: string }> =
-  [
-    { label: "Hi!!", text: "Hi!! 🔥 Free for a coffee this week?", hint: "hot" },
-    { label: "Hi!", text: "Hi! Great seeing you — want to catch up soon?", hint: "warm" },
-    { label: "Hi.", text: "Hi. Noted.", hint: "neutral" },
-    { label: "Hi...", text: "Hi... been a while.", hint: "cooling" },
-  ];
+type SimulateTone = "hot" | "warm" | "neutral" | "cooling";
+
+const SIMULATE_VARIANTS: Array<{
+  label: string;
+  text: string;
+  hint: SimulateTone;
+}> = [
+  { label: "Hi!!", text: "Hi!! 🔥 Free for a coffee this week?", hint: "hot" },
+  { label: "Hi!", text: "Hi! Great seeing you — want to catch up soon?", hint: "warm" },
+  { label: "Hi.", text: "Hi. Noted.", hint: "neutral" },
+  { label: "Hi...", text: "Hi... been a while.", hint: "cooling" },
+];
 
 export function LiveClassificationCard({
   accentColor,
@@ -182,60 +187,101 @@ export function LiveClassificationCard({
       }`}
       style={{ borderColor: "var(--border)" }}
     >
-      <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Activity
-            className="h-4 w-4"
-            strokeWidth={1.75}
-            style={{ color: accentColor }}
-          />
-          <div
-            className="font-mono text-[10px] uppercase tracking-widest"
-            style={{ color: accentColor }}
-          >
-            {latest ? "Last classification" : "No classifications yet"}
-            {latest ? ` · ${relativeTime(latest.created_at)}` : ""}
-          </div>
+      {/* ── DEMO SIMULATE section — prominent, chunky buttons ─────────── */}
+      <div className="mb-6 pb-6 border-b border-[var(--hairline)]">
+        <div
+          className="font-mono text-[10px] uppercase tracking-widest mb-1"
+          style={{ color: accentColor }}
+        >
+          Demo · Simulate a cue
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)] mr-1">
-            Simulate
-          </span>
+        <h3
+          className="font-editorial text-xl md:text-2xl tracking-tight leading-tight mb-2"
+          style={{ fontWeight: 700, letterSpacing: "-0.02em" }}
+        >
+          Fire a cue → watch Claude classify it live.
+        </h3>
+        <p className="text-sm text-[var(--muted-strong)] leading-relaxed mb-4 max-w-xl">
+          Each button sends a canned message through the real classifier
+          pipeline (Claude + the 11-signal taxonomy + Supabase). Result
+          populates below in ~3 seconds.
+        </p>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
           {SIMULATE_VARIANTS.map((v) => {
             const active = simulating === v.label;
+            const toneColor = simulateToneColor(v.hint);
             return (
               <button
                 key={v.label}
                 type="button"
                 onClick={() => simulate(v)}
-                disabled={active}
-                className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-[var(--muted-strong)] hover:text-[var(--foreground)] hover:border-[var(--foreground)] transition-colors disabled:opacity-50"
+                disabled={!!simulating}
+                className="group relative flex flex-col items-start rounded-xl border-2 px-4 py-3 md:py-3.5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+                style={{
+                  borderColor: `color-mix(in srgb, ${toneColor} 42%, transparent)`,
+                  backgroundColor: `color-mix(in srgb, ${toneColor} 8%, white)`,
+                }}
                 title={v.text}
+                aria-label={`Simulate "${v.label}" cue — classifies as ${v.hint}`}
               >
-                {active ? (
-                  <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2} />
-                ) : (
-                  <Zap className="h-3 w-3" strokeWidth={2} />
-                )}
-                {v.label}
+                <span
+                  className="flex items-center gap-1.5 font-editorial text-xl md:text-2xl tabular-nums"
+                  style={{ fontWeight: 700, color: toneColor }}
+                >
+                  {active ? (
+                    <Loader2
+                      className="h-4 w-4 md:h-5 md:w-5 animate-spin"
+                      strokeWidth={2.25}
+                    />
+                  ) : (
+                    <Zap
+                      className="h-4 w-4 md:h-5 md:w-5 transition-transform group-hover:scale-110"
+                      strokeWidth={2.5}
+                    />
+                  )}
+                  {v.label}
+                </span>
+                <span
+                  className="mt-0.5 font-mono text-[10px] uppercase tracking-widest"
+                  style={{ color: toneColor, opacity: 0.85 }}
+                >
+                  {v.hint}
+                </span>
               </button>
             );
           })}
         </div>
+
+        {simError ? (
+          <div
+            className="mt-3 inline-flex items-center gap-1.5 font-mono text-[11px] rounded px-2 py-1"
+            style={{
+              backgroundColor: "color-mix(in srgb, var(--indigo) 10%, white)",
+              color: "var(--indigo)",
+            }}
+          >
+            <AlertCircle className="h-3 w-3" strokeWidth={2} />
+            Simulate failed: {simError}
+          </div>
+        ) : null}
       </div>
 
-      {simError ? (
+      {/* ── Last Classification section ──────────────────────────────── */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <Activity
+          className="h-4 w-4"
+          strokeWidth={1.75}
+          style={{ color: accentColor }}
+        />
         <div
-          className="mb-3 inline-flex items-center gap-1.5 font-mono text-[11px] rounded px-2 py-1"
-          style={{
-            backgroundColor: "color-mix(in srgb, var(--indigo) 10%, white)",
-            color: "var(--indigo)",
-          }}
+          className="font-mono text-[10px] uppercase tracking-widest"
+          style={{ color: accentColor }}
         >
-          <AlertCircle className="h-3 w-3" strokeWidth={2} />
-          Simulate failed: {simError}
+          {latest ? "Last classification" : "No classifications yet"}
+          {latest ? ` · ${relativeTime(latest.created_at)}` : ""}
         </div>
-      ) : null}
+      </div>
 
       {fetching ? (
         <div className="font-mono text-xs text-[var(--muted)] py-4">
@@ -381,6 +427,22 @@ function classificationTone(
       return "cooling";
     default:
       return "neutral";
+  }
+}
+
+function simulateToneColor(
+  hint: "hot" | "warm" | "neutral" | "cooling",
+): string {
+  switch (hint) {
+    case "hot":
+      return "var(--warmth-hot)";
+    case "warm":
+      return "var(--warmth-warm)";
+    case "cooling":
+      return "var(--warmth-cold)";
+    case "neutral":
+    default:
+      return "var(--muted-strong)";
   }
 }
 
