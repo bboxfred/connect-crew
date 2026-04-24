@@ -1,0 +1,362 @@
+@import "tailwindcss";
+
+:root {
+  /* Paper & ink ─ warm off-white editorial feel */
+  --background: #faf8f3;
+  --paper: #f2efe8;
+  --surface: #ffffff;
+  --ink: #1a1816;
+  --foreground: #1a1816;
+  --muted: #6b6660;
+  --muted-strong: #48443e;
+  --border: #e4dfd4;
+  --hairline: #ece7db;
+
+  /* Warmth spectrum (score colors) */
+  --warmth-hot: #e85a3c;
+  --warmth-warm: #e8a33a;
+  --warmth-neutral: #6a9b8f;
+  --warmth-cold: #8a8680;
+
+  /* Editorial accent palette — one per Crew member + supporting tones.
+     Canonical Crew (April 23, 2026 final): 5 members. Terracotta kept as an
+     accent + Team tier colour; indigo is the Social Media Crew hue. */
+  --coral: #e85a3c;        /* Scanner — heat, speed */
+  --teal: #2d7d7a;         /* Messenger — watchful, quiet */
+  --copper: #c07a2c;       /* Mailbox — gatekeeper */
+  --terracotta: #c65a4d;   /* accent · Team tier · legacy Warm */
+  --indigo: #3d4e7e;       /* Social Media — platforms */
+  --sage: #7b9a8d;         /* Scribe — the note-taker */
+
+  /* Supporting */
+  --gold: #b89656;
+  --plum: #6e4a5f;
+  --butter: #f5e6c8;       /* soft background wash */
+  --sky: #c8d7e0;          /* soft background wash */
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-hairline: var(--hairline);
+
+  --color-warmth-hot: var(--warmth-hot);
+  --color-warmth-warm: var(--warmth-warm);
+  --color-warmth-neutral: var(--warmth-neutral);
+  --color-warmth-cold: var(--warmth-cold);
+  --color-coral: var(--coral);
+  --color-teal: var(--teal);
+  --color-copper: var(--copper);
+  --color-terracotta: var(--terracotta);
+  --color-indigo: var(--indigo);
+  --color-sage: var(--sage);
+  --color-gold: var(--gold);
+  --color-plum: var(--plum);
+  --color-butter: var(--butter);
+  --color-sky: var(--sky);
+
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-display);
+  --font-mono: var(--font-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* Keyboard focus safety net: subtle, visible, never dropped off anything
+   interactive. Uses :focus-visible so it doesn't trigger on mouse clicks. */
+*:focus {
+  outline: none;
+}
+*:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible {
+  outline-color: color-mix(in srgb, var(--ink) 80%, transparent);
+}
+
+.font-editorial {
+  font-family: var(--font-display), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.font-mono {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Gentle paper grain */
+.paper-grain {
+  background-image:
+    radial-gradient(rgba(26, 24, 22, 0.018) 1px, transparent 1px),
+    radial-gradient(rgba(26, 24, 22, 0.012) 1px, transparent 1px);
+  background-size: 4px 4px, 7px 7px;
+  background-position: 0 0, 2px 2px;
+}
+
+/* Motion primitives ─ subtle, editorial */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseHot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes bar-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@keyframes sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@keyframes sway {
+  0%, 100% {
+    transform: rotate(-2.5deg) translateY(0);
+  }
+  50% {
+    transform: rotate(2.5deg) translateY(-4px);
+  }
+}
+
+@keyframes waveHi {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  15% {
+    transform: scale(1.1) rotate(-6deg) translateY(-6px);
+  }
+  30% {
+    transform: scale(1.12) rotate(6deg) translateY(-8px);
+  }
+  45% {
+    transform: scale(1.1) rotate(-4deg) translateY(-6px);
+  }
+  60% {
+    transform: scale(1.08) rotate(4deg) translateY(-4px);
+  }
+  100% {
+    transform: scale(1) rotate(0deg) translateY(0);
+  }
+}
+
+@keyframes bubbleIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 6px)) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
+}
+
+.anim-sway {
+  animation: sway 3.2s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+
+.anim-wave {
+  animation: waveHi 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: 50% 90%;
+}
+
+.anim-bubble-in {
+  animation: bubbleIn 0.28s var(--ease-out) both;
+}
+
+/* ── Dynamic motion ───────────────────────────────────────── */
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.gradient-animated {
+  animation: gradient-shift 9s ease-in-out infinite;
+}
+
+@keyframes rail-shimmer {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+.rail-animated {
+  background: linear-gradient(
+    90deg,
+    var(--coral) 0%,
+    var(--coral) 16%,
+    var(--teal) 16%,
+    var(--teal) 33%,
+    var(--copper) 33%,
+    var(--copper) 50%,
+    var(--terracotta) 50%,
+    var(--terracotta) 66%,
+    var(--indigo) 66%,
+    var(--indigo) 83%,
+    var(--sage) 83%,
+    var(--sage) 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+.rail-animated::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  background-size: 30% 100%;
+  background-repeat: no-repeat;
+  animation: rail-shimmer 6s linear infinite;
+}
+
+@keyframes drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(30px, -20px) scale(1.08); }
+}
+@keyframes drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-26px, 18px) scale(0.94); }
+}
+@keyframes drift-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(18px, 26px) scale(1.05); }
+}
+.anim-drift-1 { animation: drift-1 14s ease-in-out infinite; }
+.anim-drift-2 { animation: drift-2 17s ease-in-out infinite; }
+.anim-drift-3 { animation: drift-3 11s ease-in-out infinite; }
+
+@keyframes marquee-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+}
+.marquee-track {
+  display: flex;
+  gap: 2.5rem;
+  width: max-content;
+  animation: marquee-left 42s linear infinite;
+}
+
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.anim-rotate-slow {
+  animation: rotate-slow 18s linear infinite;
+}
+
+/* Scroll-triggered reveals — works in all modern browsers via view() timeline,
+   falls back to plain fadeUp where animation-timeline isn't supported. */
+.reveal-on-scroll {
+  animation: fadeUp 0.7s var(--ease-out) both;
+}
+@supports (animation-timeline: view()) {
+  .reveal-on-scroll {
+    animation: fadeUp linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 25%;
+  }
+}
+
+.anim-fade-up {
+  animation: fadeUp 0.7s var(--ease-out) both;
+}
+
+.anim-pulse-hot {
+  animation: pulseHot 2.4s ease-in-out infinite;
+}
+
+.anim-bar-fill {
+  transform-origin: left;
+  animation: bar-fill 1.2s var(--ease-out) both;
+}
+
+.anim-dash {
+  stroke-dasharray: 4 4;
+  animation: dash 1.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade-up,
+  .anim-pulse-hot,
+  .anim-bar-fill,
+  .anim-dash,
+  .anim-sway,
+  .anim-wave,
+  .anim-bubble-in,
+  .gradient-animated,
+  .rail-animated::after,
+  .anim-drift-1,
+  .anim-drift-2,
+  .anim-drift-3,
+  .marquee-track,
+  .anim-rotate-slow,
+  .reveal-on-scroll {
+    animation: none !important;
+  }
+}
