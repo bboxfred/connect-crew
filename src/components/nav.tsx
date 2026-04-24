@@ -21,16 +21,19 @@ export function Nav() {
       <div className="mx-auto max-w-7xl px-4 md:px-6 h-14 flex items-center justify-between gap-6">
         <Link
           href="/"
-          className="font-editorial text-lg tracking-tight flex items-center gap-2 shrink-0"
+          className="flex items-center shrink-0"
+          aria-label="Connect Crew — home"
         >
-          <span
-            className="inline-block h-2.5 w-2.5 rounded-full anim-rotate-slow"
-            style={{
-              background:
-                "conic-gradient(from 0deg, var(--coral), var(--teal), var(--copper), var(--terracotta), var(--indigo), var(--sage), var(--coral))",
-            }}
+          {/* Logo wordmark (color colorway) — source 2219x270, rendered at h=24
+              so it reads at nav height. Next handles responsive scaling. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/logo-color.png"
+            alt="Connect Crew"
+            height={24}
+            className="h-6 w-auto"
+            draggable={false}
           />
-          Connect Crew
         </Link>
         <div className="hidden md:flex items-center gap-6 text-sm">
           {navLinks.map((l) => (

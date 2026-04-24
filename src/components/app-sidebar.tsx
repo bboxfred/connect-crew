@@ -189,16 +189,18 @@ export function AppSidebar() {
         <div className="px-6 py-4 border-b border-white/10">
           <Link
             href="/"
-            className="font-editorial text-lg tracking-tight flex items-center gap-2 text-white"
+            className="flex items-center text-white"
+            aria-label="Connect Crew — home"
           >
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-full anim-rotate-slow"
-              style={{
-                background:
-                  "conic-gradient(from 0deg, var(--coral), var(--teal), var(--copper), var(--terracotta), var(--indigo), var(--sage), var(--coral))",
-              }}
+            {/* White wordmark on dark sidebar. Source 2219x270. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/logo-white.png"
+              alt="Connect Crew"
+              height={24}
+              className="h-6 w-auto"
+              draggable={false}
             />
-            Connect Crew
           </Link>
         </div>
 

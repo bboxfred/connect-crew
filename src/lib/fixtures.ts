@@ -2109,7 +2109,9 @@ export type SecretSignalRule = {
   delta: number;
   scope: SignalScope;
   active: boolean;
-  is_default?: boolean; // shipped with Connect Crew, can be adjusted but not deleted
+  is_default?: boolean; // shipped with Connect Crew (informational only — user can edit / delete)
+  /** Preset reply that fires when this signal matches. Empty = Claude drafts dynamically. */
+  reply_template?: string;
 };
 
 // Label per category — used in the UI panel
@@ -2128,192 +2130,109 @@ export const SIGNAL_CATEGORY_LABEL: Record<SignalCategory, string> = {
 };
 
 export const fixtureSecretSignals: SecretSignalRule[] = [
-  // ─── Punctuation (all channels) ───
+  // ─── Punctuation / message-content triggers — Messenger (Telegram / WhatsApp) ───
+  // Every rule is a literal match on the inbound message content. Replies
+  // are presets the user can edit; leave blank and Claude drafts dynamically.
   {
-    id: "sig-punct-1",
+    id: "sig-msg-hi2",
     category: "punctuation",
-    condition: '"Hi!!" or more',
+    condition: '"Hi!!" — hot / hot-lead',
     delta: 6,
-    scope: "all",
+    scope: "telegram",
     active: true,
-    is_default: true,
+    reply_template:
+      "Hey! 🔥 Great to hear from you — let's make time this week. What does Thursday or Friday look like for you?\n\nFreddy",
   },
   {
-    id: "sig-punct-2",
+    id: "sig-msg-hi1",
     category: "punctuation",
-    condition: '"Hi!" single exclamation',
-    delta: 3,
-    scope: "all",
-    active: true,
-    is_default: true,
-  },
-  {
-    id: "sig-punct-3",
-    category: "punctuation",
-    condition: '"Hi." period-ended',
-    delta: 0,
-    scope: "all",
-    active: true,
-    is_default: true,
-  },
-  {
-    id: "sig-punct-4",
-    category: "punctuation",
-    condition: '"Hi..." ellipsis',
-    delta: -2,
-    scope: "all",
-    active: true,
-    is_default: true,
-  },
-
-  // ─── Greeting style (Messenger channels) ───
-  {
-    id: "sig-greet-1",
-    category: "greeting",
-    condition: '"Hey [name]" casual',
+    condition: '"Hi!" — warm / engaged',
     delta: 3,
     scope: "telegram",
     active: true,
-    is_default: true,
+    reply_template:
+      "Hi! Great to hear from you. Happy to chat more — what did you have in mind?\n\nFreddy",
   },
   {
-    id: "sig-greet-2",
-    category: "greeting",
-    condition: '"Dear [name]" formal',
+    id: "sig-msg-hi0",
+    category: "punctuation",
+    condition: '"Hi" — neutral / measured',
     delta: 1,
-    scope: "email",
+    scope: "telegram",
     active: true,
-    is_default: true,
+    reply_template:
+      "Hi — thanks for reaching out. What can I help with?\n\nFreddy",
   },
   {
-    id: "sig-greet-3",
-    category: "greeting",
-    condition: '"[Name]-san" (JP-polite)',
-    delta: 2,
-    scope: "email",
+    id: "sig-msg-hidot",
+    category: "punctuation",
+    condition: '"Hi." — cold / curt',
+    delta: 0,
+    scope: "telegram",
     active: true,
-    is_default: true,
+    reply_template: "",
+  },
+  {
+    id: "sig-msg-hidots",
+    category: "punctuation",
+    condition: '"Hi..." — cooling / hesitant',
+    delta: -2,
+    scope: "telegram",
+    active: true,
+    reply_template: "",
   },
 
-  // ─── Emoji (all channels) ───
+  // ─── Emoji content triggers — Messenger ───
   {
-    id: "sig-emoji-1",
+    id: "sig-msg-fire",
     category: "emoji",
     condition: "🔥 in message",
     delta: 3,
-    scope: "all",
+    scope: "telegram",
     active: true,
-    is_default: true,
+    reply_template: "",
   },
   {
-    id: "sig-emoji-2",
+    id: "sig-msg-pray",
     category: "emoji",
     condition: "🙏 or 🙌 (gratitude)",
     delta: 2,
-    scope: "all",
+    scope: "telegram",
     active: true,
-    is_default: true,
-  },
-  {
-    id: "sig-emoji-3",
-    category: "emoji",
-    condition: "😂 with no context (sarcasm)",
-    delta: -2,
-    scope: "all",
-    active: true,
-    is_default: true,
+    reply_template: "",
   },
 
-  // ─── Response time ───
+  // ─── Social Media — three cue triggers, each with a preset reply ───
+  // Per user: just Hi / Hi! / Hi!! for Social. Cold → very warm.
   {
-    id: "sig-rt-1",
-    category: "response_time",
-    condition: "reply within 5 min",
-    delta: 4,
-    scope: "all",
+    id: "sig-soc-hi0",
+    category: "punctuation",
+    condition: '"Hi" — cold / stranger',
+    delta: 0,
+    scope: "social",
     active: true,
-    is_default: true,
+    reply_template:
+      "Hi there. Thanks for reaching out — I don't think we've connected before. What can I help with?",
   },
   {
-    id: "sig-rt-2",
-    category: "response_time",
-    condition: "reply within 1 hr",
-    delta: 2,
-    scope: "all",
-    active: true,
-    is_default: true,
-  },
-  {
-    id: "sig-rt-3",
-    category: "response_time",
-    condition: "reply > 3 days",
-    delta: -3,
-    scope: "all",
-    active: true,
-    is_default: true,
-  },
-
-  // ─── Channel choice ───
-  {
-    id: "sig-ch-1",
-    category: "channel",
-    condition: "Telegram/WhatsApp personal",
-    delta: 2,
-    scope: "all",
-    active: true,
-    is_default: true,
-  },
-  {
-    id: "sig-ch-2",
-    category: "channel",
-    condition: "Calendar-only, no chat",
-    delta: -2,
-    scope: "all",
-    active: true,
-    is_default: true,
-  },
-
-  // ─── Social-specific signals ───
-  {
-    id: "sig-soc-1",
-    category: "social",
-    condition: "Instagram DM with 🙌",
+    id: "sig-soc-hi1",
+    category: "punctuation",
+    condition: '"Hi!" — warm',
     delta: 3,
     scope: "social",
     active: true,
-    is_default: true,
+    reply_template:
+      "Hi! Great to hear from you. What's on your mind? Happy to chat more.",
   },
   {
-    id: "sig-soc-2",
-    category: "social",
-    condition: "X DM from journalist",
-    delta: 1,
+    id: "sig-soc-hi2",
+    category: "punctuation",
+    condition: '"Hi!!" — very warm',
+    delta: 6,
     scope: "social",
     active: true,
-    is_default: true,
-  },
-  {
-    id: "sig-soc-3",
-    category: "social",
-    condition: "FB Messenger after 2+ mutual follows",
-    delta: 2,
-    scope: "social",
-    active: true,
-    is_default: true,
-  },
-
-  // ─── User custom rules (demo) ───
-  // Message Check — scheduled "sweep" for new inbound. Delta 0 because
-  // it's a scheduling rule, not a scoring rule; kept in the list so the
-  // user can edit the time. The condition text is the schedule the
-  // classifier/ingester reads at wake-up time.
-  {
-    id: "sig-custom-2",
-    category: "timing",
-    condition: "Message check · 6 AM everyday",
-    delta: 0,
-    scope: "all",
-    active: true,
+    reply_template:
+      "Hi! 🙌 Awesome to hear from you — let's jump on a quick call this week. Which day works for you?",
   },
 ];
 

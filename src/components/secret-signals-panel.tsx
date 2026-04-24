@@ -8,7 +8,6 @@ import {
   Trash2,
   Check,
   X as XIcon,
-  Lock,
   MessageSquareReply,
   ChevronDown,
   ChevronUp,
@@ -68,9 +67,15 @@ export function SecretSignalsPanel({
   const [showAdd, setShowAdd] = useState(false);
   // Per-rule reply templates — what gets sent when THIS signal fires.
   // Empty template = Claude drafts dynamically. Set template = use it as
-  // the basis for the drafted reply.
+  // the basis for the drafted reply. Seeded from rule.reply_template so
+  // fixture rules can ship with defaults the user then edits.
   const [replyTemplates, setReplyTemplates] = useState<Record<string, string>>(
-    {},
+    () =>
+      Object.fromEntries(
+        initial
+          .filter((r) => typeof r.reply_template === "string")
+          .map((r) => [r.id, r.reply_template ?? ""]),
+      ),
   );
   const [replyOpen, setReplyOpen] = useState<Record<string, boolean>>({});
   const [newRule, setNewRule] = useState<{
@@ -490,23 +495,14 @@ function RuleRow({
           >
             <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} />
           </button>
-          {rule.is_default ? (
-            <span
-              className="h-7 w-7 rounded flex items-center justify-center text-[var(--muted)]"
-              title="Default rule — can be adjusted or disabled, not deleted"
-            >
-              <Lock className="h-3.5 w-3.5" strokeWidth={1.75} />
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={onDelete}
-              className="h-7 w-7 rounded flex items-center justify-center text-[var(--muted-strong)] hover:text-[var(--warmth-hot)] hover:bg-[var(--paper)]"
-              aria-label="Delete rule"
-            >
-              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onDelete}
+            className="h-7 w-7 rounded flex items-center justify-center text-[var(--muted-strong)] hover:text-[var(--warmth-hot)] hover:bg-[var(--paper)]"
+            aria-label="Delete rule"
+          >
+            <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+          </button>
         </div>
       </div>
 
