@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, Activity } from "lucide-react";
+import { ArrowLeft, MessageCircle, Info } from "lucide-react";
 import { CREW } from "@/lib/fixtures";
 import { SecretSignalsPanel } from "@/components/secret-signals-panel";
+import { LiveClassificationCard } from "@/components/live-classification-card";
 
 // ─── Messenger (/app/signals) ──────────────────────────────────────────────
 // Watches Telegram + WhatsApp, classifies every inbound with the 11 signal
@@ -82,54 +83,50 @@ export default function MessengerPage() {
         />
       </section>
 
-      {/* Last classification reasoning trail */}
-      <section
-        className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 md:p-6 anim-fade-up"
-        style={{ animationDelay: "0.14s" }}
+      {/* Live classification + simulate controls */}
+      <div className="anim-fade-up" style={{ animationDelay: "0.14s" }}>
+        <LiveClassificationCard accentColor={crew.color} />
+      </div>
+
+      {/* Roadmap notice — outbound cue detection requires MTProto */}
+      <aside
+        className="rounded-2xl border p-4 md:p-5 anim-fade-up"
+        style={{
+          animationDelay: "0.18s",
+          borderColor: "color-mix(in srgb, var(--indigo) 22%, transparent)",
+          backgroundColor: "color-mix(in srgb, var(--indigo) 4%, white)",
+        }}
       >
-        <div className="flex items-center gap-2 mb-3">
-          <Activity
-            className="h-4 w-4"
+        <div className="flex items-start gap-3">
+          <Info
+            className="h-4 w-4 mt-0.5 shrink-0"
             strokeWidth={1.75}
-            style={{ color: crew.color }}
+            style={{ color: "var(--indigo)" }}
           />
-          <div
-            className="font-mono text-[10px] uppercase tracking-widest"
-            style={{ color: crew.color }}
-          >
-            Last classification · 2h ago
+          <div className="min-w-0">
+            <div
+              className="font-mono text-[10px] uppercase tracking-widest mb-1.5"
+              style={{ color: "var(--indigo)" }}
+            >
+              Roadmap · Outbound cue detection
+            </div>
+            <p className="text-sm text-[var(--foreground)] leading-relaxed mb-2">
+              The full Secret Signals experience — typing <code className="font-mono text-[12px] px-1 py-0.5 rounded bg-[var(--paper)]">Hi!!</code> directly
+              to your contact on Telegram and having Connect Crew detect it,
+              then auto-draft a richer follow-up — requires MTProto user-API
+              integration, not the Bot API. Telegram&apos;s Bot API cannot read
+              DMs you send to other users; that&apos;s a protocol wall, not a
+              bug.
+            </p>
+            <p className="text-sm text-[var(--muted-strong)] leading-relaxed">
+              MTProto wiring is a 4–6 hour task — scoped into the post-beta
+              roadmap. For today&apos;s hackathon demo, use the <strong>Simulate</strong>
+              {" "}buttons above to run the classifier against canned messages,
+              or DM the bot directly to watch inbound classification work live.
+            </p>
           </div>
         </div>
-        <div className="font-editorial text-lg md:text-xl leading-snug tracking-tight text-[var(--ink)] mb-2">
-          &ldquo;Hi Freddy!! 🔥 Free for a coffee this week?&rdquo;
-        </div>
-        <div className="font-mono text-[11px] text-[var(--muted)] mb-4">
-          From · Sofia Alencar · Telegram · Warmth before: 76 → 82
-        </div>
-        <ul className="space-y-1.5 text-sm leading-relaxed">
-          <ReasoningLine label="Punctuation" note='"Hi!!" matched — double-exclamation' delta="+6" color={crew.color} />
-          <ReasoningLine label="Emoji" note="🔥 detected" delta="+3" color={crew.color} />
-          <ReasoningLine label="Greeting" note='"Hi [name]" casual' delta="+0" color={crew.color} />
-          <ReasoningLine label="Response time" note="reply within 8 min to your last" delta="+2" color={crew.color} />
-          <ReasoningLine label="Channel" note="Telegram (personal)" delta="+2" color={crew.color} />
-        </ul>
-        <div className="mt-4 pt-4 border-t border-[var(--hairline)] flex items-center justify-between flex-wrap gap-3">
-          <div className="font-mono text-xs text-[var(--muted-strong)]">
-            Net delta:{" "}
-            <span className="font-medium tabular-nums" style={{ color: "var(--warmth-hot)" }}>
-              +13
-            </span>{" "}
-            · clamped to <span className="font-medium tabular-nums">+6</span> per-event cap
-          </div>
-          <Link
-            href="/app/contacts/sofia"
-            className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted-strong)] hover:text-[var(--foreground)] flex items-center gap-1 transition-colors"
-          >
-            Open contact
-            <ArrowLeft className="h-3 w-3 rotate-180" strokeWidth={1.75} />
-          </Link>
-        </div>
-      </section>
+      </aside>
     </div>
   );
 }
@@ -193,42 +190,3 @@ function ChannelTile({
   );
 }
 
-function ReasoningLine({
-  label,
-  note,
-  delta,
-  color,
-}: {
-  label: string;
-  note: string;
-  delta: string;
-  color: string;
-}) {
-  const deltaNum = parseInt(delta, 10);
-  const deltaColor =
-    deltaNum > 0
-      ? "var(--warmth-hot)"
-      : deltaNum < 0
-        ? "var(--warmth-cold)"
-        : "var(--muted)";
-  return (
-    <li className="flex items-center gap-3 text-sm">
-      <span
-        className="font-mono text-[10px] uppercase tracking-wider w-28 shrink-0"
-        style={{ color }}
-      >
-        {label}
-      </span>
-      <span className="flex-1 text-[var(--foreground)]">{note}</span>
-      <span
-        className="font-mono tabular-nums text-xs px-2 py-0.5 rounded"
-        style={{
-          backgroundColor: `color-mix(in srgb, ${deltaColor} 12%, white)`,
-          color: deltaColor,
-        }}
-      >
-        {delta}
-      </span>
-    </li>
-  );
-}
