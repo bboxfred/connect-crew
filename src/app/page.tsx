@@ -117,67 +117,22 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ───────── Hero — animated Crew character line-up ─────────
-          Cinematic editorial backdrop fills the entire section. Image
-          at ~85% opacity; a light translucent overlay only at the
-          bottom edge so the CTA button reads cleanly. */}
-      <div className="relative overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/backgrounds/hero-backdrop.png"
-          alt=""
-          aria-hidden
-          className="absolute inset-0 h-full w-full object-cover opacity-85 pointer-events-none"
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(180deg, color-mix(in srgb, var(--background) 25%, transparent) 0%, transparent 35%, transparent 70%, color-mix(in srgb, var(--background) 45%, transparent) 100%)",
-          }}
-        />
-        <div className="relative z-10">
-          <CrewHero />
+      {/* ───────── Hero — animated Crew character line-up ───────── */}
+      <CrewHero />
 
-          {/* Primary CTA — jump straight into the product */}
-          <div className="mx-auto w-full max-w-5xl px-6 pb-16 flex items-center justify-center">
-            <Link
-              href="/app"
-              className="inline-flex items-center gap-2 rounded-full bg-[var(--ink)] px-7 py-3.5 text-base font-medium text-[var(--background)] hover:opacity-90 transition-opacity shadow-lg hover:shadow-xl"
-            >
-              Open Dashboard{" "}
-              <ArrowRight className="h-5 w-5" strokeWidth={2} />
-            </Link>
-          </div>
-        </div>
+      {/* Primary CTA — jump straight into the product */}
+      <div className="mx-auto w-full max-w-5xl px-6 pb-16 flex items-center justify-center">
+        <Link
+          href="/app"
+          className="inline-flex items-center gap-2 rounded-full bg-[var(--ink)] px-7 py-3.5 text-base font-medium text-[var(--background)] hover:opacity-90 transition-opacity shadow-lg hover:shadow-xl"
+        >
+          Open Dashboard{" "}
+          <ArrowRight className="h-5 w-5" strokeWidth={2} />
+        </Link>
       </div>
 
-      {/* ───────── What is Connect Crew · one-liner + paragraph ─────────
-          Background: a looping Networking.mp4 with a warm-paper tint
-          overlay so text reads cleanly on top. */}
+      {/* ───────── What is Connect Crew · one-liner + paragraph ───────── */}
       <section className="border-t border-[var(--border)] relative overflow-hidden">
-        {/* Looping networking video backdrop */}
-        <video
-          className="absolute inset-0 h-full w-full object-cover pointer-events-none"
-          src="/video/networking.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          aria-hidden
-        />
-        {/* Readability overlay — warm-paper tint at partial opacity so
-            the video is visible but text stays legible on any frame */}
-        <div
-          aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(180deg, color-mix(in srgb, var(--background) 82%, transparent) 0%, color-mix(in srgb, var(--background) 68%, transparent) 45%, color-mix(in srgb, var(--background) 78%, transparent) 100%)",
-          }}
-        />
-
         <div className="relative mx-auto w-full max-w-4xl px-6 py-20 md:py-24">
           <div
             className="font-mono text-xs tracking-widest uppercase mb-5"
@@ -257,26 +212,7 @@ export default function Home() {
       <CrewGrid />
 
       {/* ───────── Master Connect · static demo section ───────── */}
-      <div className="relative overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/backgrounds/master-connect-backdrop.png"
-          alt=""
-          aria-hidden
-          className="absolute inset-0 h-full w-full object-cover opacity-75 pointer-events-none"
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(180deg, color-mix(in srgb, var(--background) 30%, transparent) 0%, transparent 40%, transparent 70%, color-mix(in srgb, var(--background) 45%, transparent) 100%)",
-          }}
-        />
-        <div className="relative z-10">
-          <MasterConnectLanding />
-        </div>
-      </div>
+      <MasterConnectLanding />
 
       {/* ───────── Morning Connect ───────── */}
       <section
@@ -361,25 +297,8 @@ export default function Home() {
       </section>
 
 
-      {/* ───────── Three narratives: Solo → Team → Portfolio ─────────
-          Backdrop: three-layers architectural gallery, warm gold-hour. */}
-      <section className="border-t border-[var(--border)] relative overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/backgrounds/tier-backdrop.png"
-          alt=""
-          aria-hidden
-          className="absolute inset-0 h-full w-full object-cover opacity-65 pointer-events-none"
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(180deg, color-mix(in srgb, var(--background) 30%, transparent) 0%, transparent 40%, transparent 70%, color-mix(in srgb, var(--background) 45%, transparent) 100%)",
-          }}
-        />
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-6 py-24 md:py-28">
+      {/* ───────── Three narratives: Solo → Team → Portfolio ───────── */}
+      <section className="border-t border-[var(--border)] mx-auto w-full max-w-7xl px-6 py-24 md:py-28">
         <div className="max-w-3xl mb-14">
           <div className="font-mono text-xs tracking-widest uppercase text-[var(--muted)] mb-6">
             From solo to portfolio
@@ -515,7 +434,6 @@ export default function Home() {
           </a>
           .
         </p>
-        </div>
       </section>
 
       <footer className="border-t border-[var(--border)] mx-auto w-full max-w-5xl px-6 py-10">

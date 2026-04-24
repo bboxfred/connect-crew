@@ -24,12 +24,12 @@ type MediaKind = "image" | "video" | null;
 // All 6 activated Apr 24 — cinematic portraits generated via
 // Genspark nano-banana-pro, served from /public/hero/{slug}.png
 const MEDIA_FILES: Record<string, { ext: string; kind: MediaKind }> = {
-  "master-connect": { ext: "png", kind: "image" },
+  "master-connect": { ext: "mp4", kind: "video" },
   scan: { ext: "mp4", kind: "video" },
-  signals: { ext: "png", kind: "image" },
-  inbound: { ext: "png", kind: "image" },
-  social: { ext: "png", kind: "image" },
-  scribe: { ext: "png", kind: "image" },
+  signals: { ext: "mp4", kind: "video" },
+  inbound: { ext: "mp4", kind: "video" },
+  social: { ext: "mp4", kind: "video" },
+  scribe: { ext: "mp4", kind: "video" },
 };
 
 type CrewChar = {
