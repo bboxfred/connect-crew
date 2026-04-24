@@ -88,9 +88,9 @@ export default function MessengerPage() {
         <LiveClassificationCard accentColor={crew.color} />
       </div>
 
-      {/* Roadmap notice — outbound cue detection on Telegram + WhatsApp */}
+      {/* Note to hackathon judges — first-person from Freddy */}
       <aside
-        className="rounded-2xl border p-4 md:p-5 anim-fade-up"
+        className="rounded-2xl border p-5 md:p-6 anim-fade-up"
         style={{
           animationDelay: "0.18s",
           borderColor: "color-mix(in srgb, var(--indigo) 22%, transparent)",
@@ -105,61 +105,130 @@ export default function MessengerPage() {
           />
           <div className="min-w-0">
             <div
-              className="font-mono text-[10px] uppercase tracking-widest mb-2"
+              className="font-mono text-[10px] uppercase tracking-widest mb-3"
               style={{ color: "var(--indigo)" }}
             >
-              Roadmap · Outbound cue detection
+              Note to hackathon judges
             </div>
-            <p className="text-sm text-[var(--foreground)] leading-relaxed mb-3">
-              The full Secret Signals experience — typing{" "}
-              <code className="font-mono text-[12px] px-1 py-0.5 rounded bg-[var(--paper)]">
-                Hi!!
-              </code>{" "}
-              directly to your contact and having Connect Crew detect it and
-              auto-draft a richer follow-up — is walled off by every major
-              messaging protocol for peer-to-peer privacy. Same architectural
-              constraint on each channel, different engineering paths to solve:
+
+            <p className="text-sm text-[var(--foreground)] leading-relaxed mb-4">
+              Hey — quick context on why this page is marked{" "}
+              <em>demo mode</em> instead of fully live.
             </p>
 
-            <ul className="space-y-3 mb-3">
-              <li className="text-sm text-[var(--muted-strong)] leading-relaxed">
-                <strong className="text-[var(--foreground)]">Telegram</strong>{" "}
-                — Bot API (what today&apos;s demo uses) cannot see DMs you send
-                to other users. <strong>MTProto</strong> user-API can see
-                everything, but requires a phone-number login as you — {" "}
-                <span className="font-mono text-[11px]">4–6 hours</span>{" "}
-                of setup, and it&apos;s a gray area under Telegram&apos;s Bot
-                policies.
-              </li>
-              <li className="text-sm text-[var(--muted-strong)] leading-relaxed">
-                <strong className="text-[var(--foreground)]">WhatsApp</strong>{" "}
-                — <em>Meta&apos;s official Business / Cloud API</em> only
-                handles business-to-customer inbound (wrong product shape for
-                personal relationships), requires 3–5 day Meta verification,
-                and charges per conversation. An unofficial QR-scan client
-                like <code className="font-mono text-[11px]">whatsapp-web.js</code> or{" "}
-                <code className="font-mono text-[11px]">@whiskeysockets/baileys</code>{" "}
-                CAN read your outbound, but it violates WhatsApp&apos;s ToS
-                and Meta periodically bans accounts using it — not safe for
-                your primary number.
-              </li>
-              <li className="text-sm text-[var(--muted-strong)] leading-relaxed">
-                <strong className="text-[var(--foreground)]">Gmail</strong>{" "}
-                — no wall. The official Gmail API (via Composio, already
-                wired for drafts) can also watch your sent folder. First
-                outbound to a new contact with a cue → triggers the
-                follow-up draft automatically. Cleanest path to ship, works
-                today.
-              </li>
-            </ul>
+            <div className="space-y-4 mb-4">
+              <div>
+                <div
+                  className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
+                  style={{ color: "var(--indigo)" }}
+                >
+                  What I want to ship
+                </div>
+                <p className="text-sm text-[var(--foreground)] leading-relaxed">
+                  I&apos;m chatting with Sofia on Telegram. I drop my cue{" "}
+                  <code className="font-mono text-[12px] px-1 py-0.5 rounded bg-[var(--paper)]">
+                    Hi!!
+                  </code>{" "}
+                  in my outbound message. Connect Crew catches it and drafts
+                  a richer follow-up — my deck attached, a calendar link,
+                  calibrated to what we just discussed. It lands in Morning
+                  Connect for my approval, or auto-sends if I&apos;ve set
+                  green-tier autonomy on her contact.
+                </p>
+              </div>
 
-            <p className="text-sm text-[var(--muted-strong)] leading-relaxed">
-              For today&apos;s hackathon, this page runs in <strong>demo
-              mode</strong>: the <strong>Simulate</strong> buttons above fire
-              the classifier against canned messages, and DMing the Telegram
-              bot watches inbound classification work live. MTProto + the
-              Gmail sent-folder watcher are post-beta track items.
-            </p>
+              <div>
+                <div
+                  className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
+                  style={{ color: "var(--indigo)" }}
+                >
+                  The wall I ran into
+                </div>
+                <p className="text-sm text-[var(--foreground)] leading-relaxed">
+                  Every major messaging protocol deliberately blocks
+                  peer-to-peer outbound capture for privacy reasons.
+                  Telegram&apos;s Bot API (what&apos;s live below) only sees
+                  messages sent <em>to</em> the bot — my DMs to Sofia are
+                  invisible to it. WhatsApp&apos;s official Business / Cloud
+                  API is built for B2C inbound to a verified business number,
+                  which is the wrong shape for personal relationships. To
+                  read my own outbound I&apos;d need Telegram MTProto
+                  (user-login, 4-6 hrs, gray area under their bot policies)
+                  or WhatsApp&apos;s unofficial Baileys library
+                  (account-ban risk — not safe for my primary number).
+                </p>
+              </div>
+
+              <div>
+                <div
+                  className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
+                  style={{ color: "var(--indigo)" }}
+                >
+                  The tradeoff I made
+                </div>
+                <p className="text-sm text-[var(--foreground)] leading-relaxed">
+                  Burn the remaining hackathon window getting MTProto wired
+                  for one demo beat — or ship three acts that actually work
+                  end-to-end (Scanner, the Messenger classifier below, and
+                  Master Connect) plus this honest roadmap for the cue UX.
+                  I picked honest over complete.
+                </p>
+              </div>
+
+              <div>
+                <div
+                  className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
+                  style={{ color: "var(--indigo)" }}
+                >
+                  How to see it working today
+                </div>
+                <ul className="space-y-1.5 text-sm text-[var(--foreground)] leading-relaxed list-disc pl-5">
+                  <li>
+                    Use the <strong>Simulate</strong> buttons above — they
+                    fire real Claude classification against the real
+                    11-signal taxonomy, on canned cue messages.
+                  </li>
+                  <li>
+                    Or DM{" "}
+                    <code className="font-mono text-[12px] px-1 py-0.5 rounded bg-[var(--paper)]">
+                      @ConnectC_bot
+                    </code>{" "}
+                    directly — same classifier, triggered by inbound-to-bot
+                    DMs instead of my outbound.
+                  </li>
+                  <li>
+                    The <strong>cue-branching</strong> section on the landing
+                    page shows the output side: the same inbound word{" "}
+                    <code className="font-mono text-[11px]">Hi</code> /{" "}
+                    <code className="font-mono text-[11px]">Hi!</code> /{" "}
+                    <code className="font-mono text-[11px]">Hi!!</code>{" "}
+                    branches to three different calibrated reply drafts. That
+                    visual is the whole thesis.
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <div
+                  className="font-mono text-[10px] uppercase tracking-wider mb-1.5"
+                  style={{ color: "var(--indigo)" }}
+                >
+                  Post-hackathon path
+                </div>
+                <p className="text-sm text-[var(--foreground)] leading-relaxed">
+                  Gmail&apos;s official API has no such wall. My first real
+                  customer probably cares more about email cue detection
+                  than Telegram anyway — Composio&apos;s already wired for
+                  the draft side, I just need to watch the sent folder. That
+                  ships next. MTProto for Telegram follows when a beta user
+                  actually asks for it.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[var(--hairline)] font-editorial text-sm text-[var(--muted-strong)] italic">
+              — Freddy
+            </div>
           </div>
         </div>
       </aside>
