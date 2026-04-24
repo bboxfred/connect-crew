@@ -63,7 +63,7 @@ const characters: CrewChar[] = [
     color: "var(--teal)",
     greeting: "Hi! I'm Messenger.",
     blurb:
-      "I watch your Telegram and WhatsApp. Hi. vs Hi Hi! vs Hi!! — three completely different relationships from the same two letters. I read the signal and draft the reply.",
+      "Set your own secret cues — e.g. drop \"Hi!\" in your opening message to a contact — and I'll fire a richer follow-up draft the next day, staged in Gmail for your approval.",
   },
   {
     slug: "inbound",

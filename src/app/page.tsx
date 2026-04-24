@@ -118,22 +118,23 @@ export default function Home() {
       </div>
 
       {/* ───────── Hero — animated Crew character line-up ─────────
-          Wrapped with a cinematic editorial backdrop at low opacity so
-          the hero cards still read on the page. */}
+          Cinematic editorial backdrop fills the entire section. Image
+          at ~85% opacity; a light translucent overlay only at the
+          bottom edge so the CTA button reads cleanly. */}
       <div className="relative overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/backgrounds/hero-backdrop.png"
           alt=""
           aria-hidden
-          className="absolute inset-0 h-full w-full object-cover opacity-40 pointer-events-none"
+          className="absolute inset-0 h-full w-full object-cover opacity-85 pointer-events-none"
         />
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "linear-gradient(180deg, color-mix(in srgb, var(--background) 55%, transparent) 0%, color-mix(in srgb, var(--background) 35%, transparent) 50%, color-mix(in srgb, var(--background) 75%, transparent) 100%)",
+              "linear-gradient(180deg, color-mix(in srgb, var(--background) 25%, transparent) 0%, transparent 35%, transparent 70%, color-mix(in srgb, var(--background) 45%, transparent) 100%)",
           }}
         />
         <div className="relative z-10">
@@ -262,14 +263,14 @@ export default function Home() {
           src="/backgrounds/master-connect-backdrop.png"
           alt=""
           aria-hidden
-          className="absolute inset-0 h-full w-full object-cover opacity-30 pointer-events-none"
+          className="absolute inset-0 h-full w-full object-cover opacity-75 pointer-events-none"
         />
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "linear-gradient(180deg, color-mix(in srgb, var(--background) 60%, transparent) 0%, color-mix(in srgb, var(--background) 40%, transparent) 50%, color-mix(in srgb, var(--background) 70%, transparent) 100%)",
+              "linear-gradient(180deg, color-mix(in srgb, var(--background) 30%, transparent) 0%, transparent 40%, transparent 70%, color-mix(in srgb, var(--background) 45%, transparent) 100%)",
           }}
         />
         <div className="relative z-10">
@@ -368,14 +369,14 @@ export default function Home() {
           src="/backgrounds/tier-backdrop.png"
           alt=""
           aria-hidden
-          className="absolute inset-0 h-full w-full object-cover opacity-25 pointer-events-none"
+          className="absolute inset-0 h-full w-full object-cover opacity-65 pointer-events-none"
         />
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "linear-gradient(180deg, color-mix(in srgb, var(--background) 65%, transparent) 0%, color-mix(in srgb, var(--background) 45%, transparent) 50%, color-mix(in srgb, var(--background) 75%, transparent) 100%)",
+              "linear-gradient(180deg, color-mix(in srgb, var(--background) 30%, transparent) 0%, transparent 40%, transparent 70%, color-mix(in srgb, var(--background) 45%, transparent) 100%)",
           }}
         />
         <div className="relative z-10 mx-auto w-full max-w-7xl px-6 py-24 md:py-28">
