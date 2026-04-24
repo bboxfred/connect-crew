@@ -145,18 +145,27 @@ export default function MessengerPage() {
                   The wall I ran into
                 </div>
                 <p className="text-sm text-[var(--foreground)] leading-relaxed">
-                  Every major messaging protocol deliberately blocks
-                  peer-to-peer outbound capture for privacy reasons.
-                  Telegram&apos;s Bot API (what&apos;s live below) only sees
-                  messages sent <em>to</em> the bot — my DMs to Sofia are
-                  invisible to it. WhatsApp&apos;s official Business / Cloud
-                  API is built for B2C inbound to a verified business number,
-                  which is the wrong shape for personal relationships. To
-                  read my own outbound I&apos;d need Telegram MTProto
-                  (user-login, 4-6 hrs, gray area under their bot policies)
-                  or WhatsApp&apos;s unofficial Baileys library
-                  (account-ban risk — not safe for my primary number).
+                  Every major messaging protocol walls off peer-to-peer
+                  outbound capture for privacy reasons. Telegram&apos;s Bot
+                  API (what&apos;s live below) only sees messages sent{" "}
+                  <em>to</em> the bot — my DMs to Sofia are invisible to it.
+                  Each channel has an official engineering path to solve it;
+                  they just need more time than this 5-hour window:
                 </p>
+                <ul className="mt-2 space-y-1.5 text-sm text-[var(--foreground)] leading-relaxed list-disc pl-5">
+                  <li>
+                    <strong>WhatsApp</strong> — Meta&apos;s official Business
+                    / Cloud API handles the cue capture and outbound send.
+                    Just needs the 3–5 day Meta verification to go live on my
+                    business number. Production-ready once verified, no ToS
+                    gray areas.
+                  </li>
+                  <li>
+                    <strong>Telegram</strong> — MTProto user-API reads my
+                    outbound directly. 4–6 hours to wire the phone-number
+                    login flow safely.
+                  </li>
+                </ul>
               </div>
 
               <div>
@@ -216,12 +225,13 @@ export default function MessengerPage() {
                   Post-hackathon path
                 </div>
                 <p className="text-sm text-[var(--foreground)] leading-relaxed">
-                  Gmail&apos;s official API has no such wall. My first real
-                  customer probably cares more about email cue detection
-                  than Telegram anyway — Composio&apos;s already wired for
-                  the draft side, I just need to watch the sent folder. That
-                  ships next. MTProto for Telegram follows when a beta user
-                  actually asks for it.
+                  Gmail ships first — no wall, Composio already handles the
+                  draft side, I just need to watch my sent folder. WhatsApp
+                  Business Cloud API is on a parallel 3-5 day async track
+                  (Meta verification in flight). Telegram MTProto follows
+                  once a beta user actually asks for it on that channel.
+                  Three channels, one cue-detection engine, same classifier
+                  under the hood.
                 </p>
               </div>
             </div>
