@@ -50,6 +50,7 @@ export default function MessengerPage() {
         style={{ animationDelay: "0.04s" }}
       >
         <ChannelTile
+          index={1}
           name="Telegram"
           status="live"
           color={crew.color}
@@ -60,13 +61,14 @@ export default function MessengerPage() {
           ]}
         />
         <ChannelTile
-          name="WhatsApp"
+          index={2}
+          name="WhatsApp Business"
           status="roadmap"
           color={crew.color}
           stats={[
-            { label: "Meta API", value: "pending" },
+            { label: "Meta Cloud API", value: "verify" },
             { label: "Signal rules", value: "shared" },
-            { label: "ETA", value: "post-beta" },
+            { label: "ETA", value: "3–5 days" },
           ]}
         />
       </section>
@@ -130,11 +132,13 @@ export default function MessengerPage() {
 }
 
 function ChannelTile({
+  index,
   name,
   status,
   color,
   stats,
 }: {
+  index?: number;
   name: string;
   status: "live" | "roadmap";
   color: string;
@@ -152,13 +156,31 @@ function ChannelTile({
       }}
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <MessageCircle
-            className="h-4 w-4"
-            strokeWidth={1.75}
-            style={{ color: live ? color : "var(--muted)" }}
-          />
-          <div className="font-editorial text-lg tracking-tight" style={{ fontWeight: 700 }}>
+        <div className="flex items-center gap-2.5">
+          {index !== undefined ? (
+            <span
+              className="inline-flex h-6 w-6 items-center justify-center rounded-full font-mono text-[11px] font-semibold tabular-nums"
+              style={{
+                backgroundColor: live
+                  ? `color-mix(in srgb, ${color} 18%, white)`
+                  : "color-mix(in srgb, var(--muted) 12%, white)",
+                color: live ? color : "var(--muted)",
+              }}
+              aria-hidden
+            >
+              {index}
+            </span>
+          ) : (
+            <MessageCircle
+              className="h-4 w-4"
+              strokeWidth={1.75}
+              style={{ color: live ? color : "var(--muted)" }}
+            />
+          )}
+          <div
+            className="font-editorial text-lg tracking-tight"
+            style={{ fontWeight: 700 }}
+          >
             {name}
           </div>
         </div>

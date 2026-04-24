@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import {
   fixtureSecretSignals,
-  SIGNAL_CATEGORY_LABEL,
   type SecretSignalRule,
   type SignalCategory,
   type SignalScope,
@@ -61,7 +60,6 @@ export function SecretSignalsPanel({
   }, [scope]);
 
   const [rules, setRules] = useState<SecretSignalRule[]>(initial);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<{
     condition: string;
@@ -84,20 +82,6 @@ export function SecretSignalsPanel({
     condition: "",
     delta: 0,
   });
-
-  // Group rules by category for the UI
-  const byCategory = useMemo(() => {
-    const groups: Partial<Record<SignalCategory, SecretSignalRule[]>> = {};
-    for (const r of rules) {
-      if (!groups[r.category]) groups[r.category] = [];
-      groups[r.category]!.push(r);
-    }
-    return groups;
-  }, [rules]);
-
-  const toggleExpanded = (cat: SignalCategory) => {
-    setExpanded((e) => ({ ...e, [cat]: !e[cat] }));
-  };
 
   const toggleActive = (id: string) => {
     setRules((rs) =>
@@ -136,7 +120,6 @@ export function SecretSignalsPanel({
     if (!newRule.condition.trim()) return;
     const id = `sig-custom-${Date.now().toString(36)}`;
     setRules((rs) => [
-      ...rs,
       {
         id,
         category: newRule.category,
@@ -145,10 +128,10 @@ export function SecretSignalsPanel({
         scope: scope === "all" ? "all" : scope,
         active: true,
       },
+      ...rs,
     ]);
     setNewRule({ category: "punctuation", condition: "", delta: 0 });
     setShowAdd(false);
-    setExpanded((e) => ({ ...e, [newRule.category]: true }));
   };
 
   // Total impact stats (net delta sum of active rules)
@@ -159,20 +142,6 @@ export function SecretSignalsPanel({
   const sumNegative = rules
     .filter((r) => r.active && r.delta < 0)
     .reduce((s, r) => s + r.delta, 0);
-
-  const categoryOrder: SignalCategory[] = [
-    "punctuation",
-    "greeting",
-    "emoji",
-    "response_time",
-    "channel",
-    "social",
-    "timing",
-    "length",
-    "silence",
-    "event_proximity",
-    "voice",
-  ];
 
   return (
     <section
@@ -262,75 +231,55 @@ export function SecretSignalsPanel({
         </div>
       </header>
 
-      {/* Body: categorized rule list */}
-      <div className="divide-y divide-[var(--hairline)]">
-        {categoryOrder
-          .filter((cat) => (byCategory[cat]?.length || 0) > 0)
-          .map((cat) => {
-            const catRules = byCategory[cat]!;
-            const isExpanded = expanded[cat] ?? mode === "full";
-            const limit = mode === "compact" && !isExpanded ? COMPACT_LIMIT : catRules.length;
-            const shown = catRules.slice(0, limit);
-            return (
-              <div key={cat} className="px-5 md:px-6 py-4">
-                <button
-                  type="button"
-                  onClick={() => toggleExpanded(cat)}
-                  className="w-full flex items-center justify-between text-left mb-3 group"
-                >
-                  <div
-                    className="font-mono text-[11px] uppercase tracking-widest"
-                    style={{ color: accentColor }}
-                  >
-                    {SIGNAL_CATEGORY_LABEL[cat]}{" "}
-                    <span className="text-[var(--muted)] ml-1">
-                      · {catRules.length} rule{catRules.length === 1 ? "" : "s"}
-                    </span>
-                  </div>
-                  <div className="font-mono text-[10px] text-[var(--muted)] opacity-0 group-hover:opacity-100 transition-opacity">
-                    {isExpanded ? "collapse" : "expand"}
-                  </div>
-                </button>
+      {/* Body: flat list of triggers, simplified per user request.
+          No more category grouping — everything is "Message". A signal
+          fires whenever the inbound matches the condition, full stop. */}
+      <div className="px-5 md:px-6 py-4">
+        <div
+          className="font-mono text-[11px] uppercase tracking-widest mb-3 flex items-center justify-between"
+          style={{ color: accentColor }}
+        >
+          <span>
+            Message triggers
+            <span className="text-[var(--muted)] ml-2 normal-case tracking-normal">
+              · {rules.length} rule{rules.length === 1 ? "" : "s"}
+            </span>
+          </span>
+        </div>
 
-                <ul className="space-y-2">
-                  {shown.map((r) => (
-                    <RuleRow
-                      key={r.id}
-                      rule={r}
-                      editing={editingId === r.id}
-                      editDraft={editDraft}
-                      onEditDraftChange={setEditDraft}
-                      onToggle={() => toggleActive(r.id)}
-                      onStartEdit={() => startEdit(r)}
-                      onSaveEdit={() => saveEdit(r.id)}
-                      onCancelEdit={cancelEdit}
-                      onDelete={() => deleteRule(r.id)}
-                      accentColor={accentColor}
-                      replyTemplate={replyTemplates[r.id] ?? ""}
-                      replyOpen={!!replyOpen[r.id]}
-                      onReplyChange={(text) =>
-                        setReplyTemplates((t) => ({ ...t, [r.id]: text }))
-                      }
-                      onReplyToggle={() =>
-                        setReplyOpen((o) => ({ ...o, [r.id]: !o[r.id] }))
-                      }
-                    />
-                  ))}
-                  {catRules.length > limit ? (
-                    <li>
-                      <button
-                        type="button"
-                        onClick={() => toggleExpanded(cat)}
-                        className="w-full text-left font-mono text-[10px] uppercase tracking-wider text-[var(--muted-strong)] hover:text-[var(--foreground)] px-2 py-1 transition-colors"
-                      >
-                        + {catRules.length - limit} more
-                      </button>
-                    </li>
-                  ) : null}
-                </ul>
-              </div>
-            );
-          })}
+        <ul className="space-y-2">
+          {(mode === "compact"
+            ? rules.slice(0, COMPACT_LIMIT)
+            : rules
+          ).map((r) => (
+            <RuleRow
+              key={r.id}
+              rule={r}
+              editing={editingId === r.id}
+              editDraft={editDraft}
+              onEditDraftChange={setEditDraft}
+              onToggle={() => toggleActive(r.id)}
+              onStartEdit={() => startEdit(r)}
+              onSaveEdit={() => saveEdit(r.id)}
+              onCancelEdit={cancelEdit}
+              onDelete={() => deleteRule(r.id)}
+              accentColor={accentColor}
+              replyTemplate={replyTemplates[r.id] ?? ""}
+              replyOpen={!!replyOpen[r.id]}
+              onReplyChange={(text) =>
+                setReplyTemplates((t) => ({ ...t, [r.id]: text }))
+              }
+              onReplyToggle={() =>
+                setReplyOpen((o) => ({ ...o, [r.id]: !o[r.id] }))
+              }
+            />
+          ))}
+          {mode === "compact" && rules.length > COMPACT_LIMIT ? (
+            <li className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)] pt-1">
+              + {rules.length - COMPACT_LIMIT} more on the Messenger page
+            </li>
+          ) : null}
+        </ul>
       </div>
     </section>
   );
@@ -638,19 +587,6 @@ function AddRuleForm({
   onSubmit: () => void;
   onCancel: () => void;
 }) {
-  const categories: SignalCategory[] = [
-    "punctuation",
-    "greeting",
-    "emoji",
-    "response_time",
-    "length",
-    "channel",
-    "timing",
-    "silence",
-    "event_proximity",
-    "voice",
-    "social",
-  ];
   return (
     <form
       onSubmit={(e) => {
@@ -660,25 +596,12 @@ function AddRuleForm({
       className="flex items-center gap-2 flex-wrap w-full rounded-xl px-3 py-3"
       style={{ backgroundColor: `color-mix(in srgb, ${accentColor} 6%, white)` }}
     >
-      <select
-        value={rule.category}
-        onChange={(e) =>
-          onChange({ ...rule, category: e.target.value as SignalCategory })
-        }
-        className="rounded border border-[var(--border)] bg-white px-2 py-1.5 text-xs font-mono"
-      >
-        {categories.map((c) => (
-          <option key={c} value={c}>
-            {SIGNAL_CATEGORY_LABEL[c]}
-          </option>
-        ))}
-      </select>
       <input
         type="text"
         value={rule.condition}
         onChange={(e) => onChange({ ...rule, condition: e.target.value })}
-        placeholder="Condition — e.g. 'Hi Fred!' or 'voice note > 30s'"
-        className="flex-1 min-w-[220px] rounded border border-[var(--border)] bg-white px-3 py-1.5 text-sm outline-none focus:border-[var(--foreground)]"
+        placeholder="Message that triggers this — e.g. 'Hi!!' or '🔥 Can we chat?'"
+        className="flex-1 min-w-[260px] rounded border border-[var(--border)] bg-white px-3 py-1.5 text-sm outline-none focus:border-[var(--foreground)]"
       />
       <div className="flex items-center gap-1">
         <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)]">
