@@ -10,6 +10,7 @@ import { CueBranching } from "@/components/cue-branching";
 import { CrewGrid } from "@/components/crew-grid";
 import { MasterConnectLanding } from "@/components/master-connect-landing";
 import { TierBlock } from "@/components/tier-block";
+import { WovenCanvas } from "@/components/woven-canvas";
 
 const soloTier = {
   name: "Solo",
@@ -113,18 +114,41 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ───────── Hero — animated Crew character line-up ───────── */}
-      <CrewHero />
+      {/* ───────── Hero — animated Crew character line-up ─────────
+          Wrapped in a relative container with a dark-blue→warm-paper
+          gradient backdrop + interactive Three.js particle canvas.
+          The hero content (CrewHero + CTA) sits on top. */}
+      <div className="relative overflow-hidden">
+        {/* Gradient backdrop — dark navy fades into the paper background.
+            The CTA section and everything below sees var(--background)
+            via the 100% stop. */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(180deg, #0a1230 0%, #15204a 25%, #2a3870 50%, color-mix(in srgb, var(--background) 70%, #2a3870) 75%, var(--background) 100%)",
+          }}
+          aria-hidden
+        />
+        {/* Interactive particle canvas — transparent, draws over the
+            gradient. Mouse-repel effect. */}
+        <WovenCanvas className="absolute inset-0 pointer-events-auto" />
 
-      {/* Primary CTA — jump straight into the product */}
-      <div className="mx-auto w-full max-w-5xl px-6 pb-16 flex items-center justify-center">
-        <Link
-          href="/app"
-          className="inline-flex items-center gap-2 rounded-full bg-[var(--ink)] px-7 py-3.5 text-base font-medium text-[var(--background)] hover:opacity-90 transition-opacity shadow-lg hover:shadow-xl"
-        >
-          Open Dashboard{" "}
-          <ArrowRight className="h-5 w-5" strokeWidth={2} />
-        </Link>
+        {/* Hero content sits above the canvas */}
+        <div className="relative z-10">
+          <CrewHero />
+
+          {/* Primary CTA — jump straight into the product */}
+          <div className="mx-auto w-full max-w-5xl px-6 pb-16 flex items-center justify-center">
+            <Link
+              href="/app"
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--ink)] px-7 py-3.5 text-base font-medium text-[var(--background)] hover:opacity-90 transition-opacity shadow-lg hover:shadow-xl"
+            >
+              Open Dashboard{" "}
+              <ArrowRight className="h-5 w-5" strokeWidth={2} />
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* ───────── The problem — with coral pull-quote block ───────── */}
