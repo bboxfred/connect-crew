@@ -144,7 +144,41 @@ export default function ScribePage() {
 
     try {
       const res = await fetch("/api/scribe", { method: "POST", body: form });
-      const json = (await res.json()) as ScribeResponse;
+      // Defensive: if the serverless function times out, Vercel closes the
+      // connection and the body is empty. res.json() throws 'Unexpected end
+      // of JSON input' — surface a clearer error instead of crashing.
+      const rawText = await res.text();
+      let json: ScribeResponse;
+      if (!rawText) {
+        const msg = `Scribe pipeline took too long (HTTP ${res.status}) — try a shorter audio note (under 30 seconds).`;
+        console.error("[scribe] empty response body", { status: res.status });
+        panel.run({
+          crew: "scribe",
+          title: "Scribe · timed out",
+          steps: [msg],
+          stepMs: 400,
+          autoDismissMs: 2500,
+        });
+        setErrorMessage(msg);
+        setMode("error");
+        return;
+      }
+      try {
+        json = JSON.parse(rawText) as ScribeResponse;
+      } catch (parseErr) {
+        const msg = `Scribe returned a malformed response. Raw (first 200 chars): ${rawText.slice(0, 200)}`;
+        console.error("[scribe] JSON parse failed:", parseErr, rawText.slice(0, 500));
+        panel.run({
+          crew: "scribe",
+          title: "Scribe · bad response",
+          steps: [msg.slice(0, 120)],
+          stepMs: 400,
+          autoDismissMs: 2500,
+        });
+        setErrorMessage(msg);
+        setMode("error");
+        return;
+      }
       if (!json.ok) {
         panel.run({
           crew: "scribe",
@@ -258,7 +292,8 @@ export default function ScribePage() {
             </h2>
             <p className="mt-3 text-sm text-[var(--muted-strong)] max-w-md leading-relaxed">
               Name the person, say what you want to send or ask. Claude
-              handles the rest — match, draft, stage in Gmail.
+              handles the rest — match, draft, stage in Gmail. Keep notes
+              under ~45 seconds for the demo.
             </p>
 
             <div className="mt-8 flex items-center gap-3 flex-wrap justify-center">

@@ -27,7 +27,9 @@ import { supabaseServer } from "@/lib/supabase";
 import { createGmailDraft } from "@/lib/composio";
 
 export const runtime = "nodejs";
-export const maxDuration = 180;
+// Hobby-plan cap is 60s. Our pipeline (upload + transcribe + draft) on
+// small files typically finishes in 15-30s — leave headroom.
+export const maxDuration = 60;
 
 type ScribeResponse =
   | {
@@ -58,7 +60,12 @@ type ScribeResponse =
       transcript?: string;
     };
 
-const MAX_BYTES = 4 * 1024 * 1024;
+// Lower than the 4MB we document upstream: gsk drive upload passes the
+// base64 payload inline as a process argv, and Linux argv has a hard cap
+// (~128KB per arg + ~2MB total ARG_MAX) that large audio will hit. 600KB
+// raw → ~820KB base64, comfortably under the cap and still enough for a
+// 45-second voice note at reasonable bitrate.
+const MAX_BYTES = 600 * 1024;
 
 export async function POST(req: Request): Promise<Response> {
   const steps: string[] = [];
