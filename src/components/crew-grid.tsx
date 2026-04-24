@@ -181,10 +181,14 @@ function CrewTile({ tile, index }: { tile: Tile; index: number }) {
         }}
       />
 
-      {/* Generated Crew illustration — floats gently */}
+      {/* Generated Crew illustration — floats gently. mix-blend-mode
+          lets the cream paper background melt into the card tint so
+          only the coloured icon reads; scale(1.35) crops the wide
+          margins of the 1024x1024 source so the subject dominates. */}
       <div
         aria-hidden
-        className={`absolute top-4 right-4 h-28 w-28 md:h-32 md:w-32 pointer-events-none ${floatClass}`}
+        className={`absolute -top-2 -right-2 h-40 w-40 md:h-48 md:w-48 pointer-events-none ${floatClass}`}
+        style={{ mixBlendMode: "multiply" }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -192,6 +196,7 @@ function CrewTile({ tile, index }: { tile: Tile; index: number }) {
           alt=""
           className="h-full w-full object-contain"
           style={{
+            transform: "scale(1.35)",
             filter: `drop-shadow(0 8px 22px color-mix(in srgb, ${tile.color} 30%, transparent))`,
           }}
           draggable={false}
