@@ -286,6 +286,22 @@ a:focus-visible,
 .anim-drift-2 { animation: drift-2 17s ease-in-out infinite; }
 .anim-drift-3 { animation: drift-3 11s ease-in-out infinite; }
 
+@keyframes crew-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33%      { transform: translateY(-5px) rotate(-0.7deg); }
+  66%      { transform: translateY(3px) rotate(0.5deg); }
+}
+.anim-crew-float-a { animation: crew-float 7s ease-in-out infinite; }
+.anim-crew-float-b { animation: crew-float 9s ease-in-out infinite 1s; }
+.anim-crew-float-c { animation: crew-float 11s ease-in-out infinite 2s; }
+
+@keyframes crew-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.05); }
+}
+.anim-crew-pulse-a { animation: crew-pulse 5s ease-in-out infinite; }
+.anim-crew-pulse-b { animation: crew-pulse 7s ease-in-out infinite 1.5s; }
+
 @keyframes marquee-left {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }

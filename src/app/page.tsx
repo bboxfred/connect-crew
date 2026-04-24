@@ -131,34 +131,80 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* ───────── What is Connect Crew · one-liner + paragraph ───────── */}
-      <section className="border-t border-[var(--border)] mx-auto w-full max-w-4xl px-6 py-20 md:py-24">
+      {/* ───────── What is Connect Crew · one-liner + paragraph ─────────
+          Backed by five softly drifting coloured blobs — one per Crew
+          signature hue — for a quiet ambient texture without any
+          cyberpunk-gradient-tech vibe. */}
+      <section className="border-t border-[var(--border)] relative overflow-hidden">
+        {/* Drifting crew-colour blobs */}
         <div
-          className="font-mono text-xs tracking-widest uppercase mb-5"
-          style={{ color: "var(--coral)" }}
-        >
-          What is Connect Crew
-        </div>
-        <h2 className="font-editorial text-3xl md:text-5xl leading-[1.05] tracking-tight mb-6">
-          A Chief and a Crew of AI specialists that keep every
-          relationship you&apos;ve ever made{" "}
-          <span
-            className="gradient-animated"
-            style={{ backgroundImage: "linear-gradient(90deg, var(--coral), var(--teal), var(--indigo))" }}
+          aria-hidden
+          className="absolute -top-20 left-[8%] h-72 w-72 rounded-full blur-3xl anim-drift-1 pointer-events-none"
+          style={{
+            backgroundColor: "color-mix(in srgb, var(--coral) 18%, transparent)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="absolute top-10 right-[10%] h-80 w-80 rounded-full blur-3xl anim-drift-2 pointer-events-none"
+          style={{
+            backgroundColor: "color-mix(in srgb, var(--teal) 15%, transparent)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="absolute bottom-0 left-[35%] h-64 w-64 rounded-full blur-3xl anim-drift-3 pointer-events-none"
+          style={{
+            backgroundColor: "color-mix(in srgb, var(--indigo) 14%, transparent)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="absolute top-1/3 right-[30%] h-56 w-56 rounded-full blur-3xl anim-crew-pulse-a pointer-events-none"
+          style={{
+            backgroundColor: "color-mix(in srgb, var(--copper) 12%, transparent)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="absolute bottom-10 right-[5%] h-60 w-60 rounded-full blur-3xl anim-crew-pulse-b pointer-events-none"
+          style={{
+            backgroundColor: "color-mix(in srgb, var(--sage) 14%, transparent)",
+          }}
+        />
+
+        <div className="relative mx-auto w-full max-w-4xl px-6 py-20 md:py-24">
+          <div
+            className="font-mono text-xs tracking-widest uppercase mb-5"
+            style={{ color: "var(--coral)" }}
           >
-            alive, warm, and queryable
-          </span>
-          .
-        </h2>
-        <p className="text-lg md:text-xl text-[var(--muted-strong)] leading-relaxed max-w-3xl">
-          Scanner files the card. Messenger reads the cue. Mailbox
-          qualifies the inbound. Social Media catches the DM. Scribe turns
-          the voice note into a follow-up email. The Chief — Master
-          Connect — lets anyone on your team ask the whole graph a
-          question: <em>&ldquo;who has a warm contact at Sequoia?&rdquo;</em>
-          &nbsp;Ten minutes in Morning Connect each day, and your
-          relationships stop slipping through the cracks.
-        </p>
+            What is Connect Crew
+          </div>
+          <h2 className="font-editorial text-3xl md:text-5xl leading-[1.05] tracking-tight mb-6">
+            A Chief and a Crew of AI specialists that keep every
+            relationship you&apos;ve ever made{" "}
+            <span
+              className="gradient-animated"
+              style={{
+                backgroundImage:
+                  "linear-gradient(90deg, var(--coral), var(--teal), var(--indigo))",
+              }}
+            >
+              alive, warm, and queryable
+            </span>
+            .
+          </h2>
+          <p className="text-lg md:text-xl text-[var(--muted-strong)] leading-relaxed max-w-3xl">
+            Scanner files the card. Messenger reads the cue. Mailbox
+            qualifies the inbound. Social Media catches the DM. Scribe turns
+            the voice note into a follow-up email. The Chief — Master
+            Connect — lets anyone on your team ask the whole graph a
+            question:{" "}
+            <em>&ldquo;who has a warm contact at Sequoia?&rdquo;</em>
+            &nbsp;Ten minutes in Morning Connect each day, and your
+            relationships stop slipping through the cracks.
+          </p>
+        </div>
       </section>
 
       {/* ───────── The problem · narrow scrolling-marquee quote banner ───────── */}
