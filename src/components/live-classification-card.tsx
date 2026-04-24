@@ -1,15 +1,20 @@
 "use client";
 
 /**
- * LiveClassificationCard — shows the most recent Telegram classification
- * from Supabase, updates in real time via Supabase Realtime, and offers
- * a "Simulate" control for demo-safety.
+ * LiveClassificationCard — shows the most recent Telegram classification,
+ * with a "Simulate" control for demo-safety.
  *
- * Data source: `interactions` table (channel=telegram, direction=inbound).
- * Reads the `signals` jsonb column for deltas + reasoning + chips.
+ * Data source: GET /api/telegram/latest (server-side Supabase query using
+ * the service-role key — bypasses browser-side env var resolution).
  *
- * Fallback: if the table is empty (fresh demo), renders a neutral empty
- * state inviting the user to DM the bot or click Simulate.
+ * Simulate flow: POST /api/telegram/simulate returns the full classification
+ * result; we build an InteractionRow from it and setState optimistically
+ * — no round-trip back to Supabase required. This makes the card work even
+ * if NEXT_PUBLIC_SUPABASE_* isn't in the client bundle.
+ *
+ * Supabase Realtime: kept as a best-effort progressive enhancement. If the
+ * browser client fails to init, it silently no-ops; the simulate path still
+ * works because it doesn't depend on realtime for UI updates.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -77,30 +82,39 @@ export function LiveClassificationCard({
     flashRef.current = window.setTimeout(() => setJustLanded(false), 1600);
   }, []);
 
-  // Initial fetch + realtime subscription
+  // Initial fetch via server-side API (doesn't rely on browser Supabase client)
   useEffect(() => {
-    if (!supabase) {
-      setFetching(false);
-      return;
-    }
     let cancelled = false;
 
     (async () => {
-      const { data } = await supabase
-        .from("interactions")
-        .select(
-          "id, contact_id, channel, direction, content, classification, created_at, signals",
-        )
-        .eq("channel", "telegram")
-        .eq("direction", "inbound")
-        .order("created_at", { ascending: false })
-        .limit(1);
-      if (!cancelled) {
-        setLatest((data?.[0] as InteractionRow | undefined) ?? null);
-        setFetching(false);
+      try {
+        const res = await fetch("/api/telegram/latest", { cache: "no-store" });
+        const json = (await res.json()) as
+          | { ok: true; row: InteractionRow | null }
+          | { ok: false; error: string };
+        if (!cancelled) {
+          if ("ok" in json && json.ok) {
+            setLatest(json.row);
+          }
+          setFetching(false);
+        }
+      } catch (err) {
+        console.error("[live-classification] initial fetch failed:", err);
+        if (!cancelled) setFetching(false);
       }
     })();
 
+    return () => {
+      cancelled = true;
+      if (flashRef.current) window.clearTimeout(flashRef.current);
+    };
+  }, []);
+
+  // Best-effort Supabase Realtime subscription for live bot DMs.
+  // If the browser client can't init (NEXT_PUBLIC_* not in bundle), this
+  // silently no-ops — simulate still works via optimistic update below.
+  useEffect(() => {
+    if (!supabase) return;
     const channel = supabase
       .channel("messenger-classifications")
       .on(
@@ -121,28 +135,8 @@ export function LiveClassificationCard({
       .subscribe();
 
     return () => {
-      cancelled = true;
-      if (flashRef.current) window.clearTimeout(flashRef.current);
       supabase.removeChannel(channel);
     };
-  }, [supabase, triggerFlash]);
-
-  const refetchLatest = useCallback(async () => {
-    if (!supabase) return;
-    const { data } = await supabase
-      .from("interactions")
-      .select(
-        "id, contact_id, channel, direction, content, classification, created_at, signals",
-      )
-      .eq("channel", "telegram")
-      .eq("direction", "inbound")
-      .order("created_at", { ascending: false })
-      .limit(1);
-    const row = data?.[0] as InteractionRow | undefined;
-    if (row) {
-      setLatest(row);
-      triggerFlash();
-    }
   }, [supabase, triggerFlash]);
 
   const simulate = useCallback(
@@ -156,21 +150,48 @@ export function LiveClassificationCard({
           body: JSON.stringify({ text: variant.text }),
         });
         const json = await res.json();
+
         if (!json.ok) {
           setSimError(json.error ?? "simulate failed");
-        } else {
-          // Refetch covers the case where Supabase Realtime replication
-          // isn't enabled on `interactions`. If it IS enabled, the
-          // subscription fires too — state update is idempotent.
-          await refetchLatest();
+          console.error("[simulate] backend returned error:", json);
+          return;
         }
+
+        // Optimistic update — build an InteractionRow from the response
+        // so the UI updates immediately, even without Supabase Realtime
+        // and even if the browser Supabase client can't init.
+        const cls = json.classification;
+        const row: InteractionRow = {
+          id: `sim-${Date.now()}`,
+          contact_id: json.contact_id ?? null,
+          channel: "telegram",
+          direction: "inbound",
+          content: variant.text,
+          classification: cls?.classification ?? null,
+          created_at: new Date().toISOString(),
+          signals: {
+            deltas: cls?.deltas ?? {},
+            signals_detected: cls?.signals_detected ?? [],
+            language_detected: cls?.language_detected ?? "und",
+            confidence: cls?.confidence ?? 0,
+            confidence_warning: cls?.confidence_warning ?? false,
+            reasoning: cls?.reasoning ?? "",
+            previous_warmth: json.previous_warmth,
+            new_warmth: json.new_warmth,
+            sender_name: json.contact_name ?? "Simulated sender",
+          },
+        };
+        setLatest(row);
+        triggerFlash();
       } catch (err) {
-        setSimError(err instanceof Error ? err.message : "network error");
+        const msg = err instanceof Error ? err.message : "network error";
+        console.error("[simulate] fetch threw:", err);
+        setSimError(msg);
       } finally {
         setSimulating(null);
       }
     },
-    [refetchLatest],
+    [triggerFlash],
   );
 
   const signals = latest?.signals ?? null;
