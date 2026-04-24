@@ -88,7 +88,7 @@ export default function MessengerPage() {
         <LiveClassificationCard accentColor={crew.color} />
       </div>
 
-      {/* Roadmap notice — outbound cue detection requires MTProto */}
+      {/* Roadmap notice — outbound cue detection on Telegram + WhatsApp */}
       <aside
         className="rounded-2xl border p-4 md:p-5 anim-fade-up"
         style={{
@@ -105,24 +105,60 @@ export default function MessengerPage() {
           />
           <div className="min-w-0">
             <div
-              className="font-mono text-[10px] uppercase tracking-widest mb-1.5"
+              className="font-mono text-[10px] uppercase tracking-widest mb-2"
               style={{ color: "var(--indigo)" }}
             >
               Roadmap · Outbound cue detection
             </div>
-            <p className="text-sm text-[var(--foreground)] leading-relaxed mb-2">
-              The full Secret Signals experience — typing <code className="font-mono text-[12px] px-1 py-0.5 rounded bg-[var(--paper)]">Hi!!</code> directly
-              to your contact on Telegram and having Connect Crew detect it,
-              then auto-draft a richer follow-up — requires MTProto user-API
-              integration, not the Bot API. Telegram&apos;s Bot API cannot read
-              DMs you send to other users; that&apos;s a protocol wall, not a
-              bug.
+            <p className="text-sm text-[var(--foreground)] leading-relaxed mb-3">
+              The full Secret Signals experience — typing{" "}
+              <code className="font-mono text-[12px] px-1 py-0.5 rounded bg-[var(--paper)]">
+                Hi!!
+              </code>{" "}
+              directly to your contact and having Connect Crew detect it and
+              auto-draft a richer follow-up — is walled off by every major
+              messaging protocol for peer-to-peer privacy. Same architectural
+              constraint on each channel, different engineering paths to solve:
             </p>
+
+            <ul className="space-y-3 mb-3">
+              <li className="text-sm text-[var(--muted-strong)] leading-relaxed">
+                <strong className="text-[var(--foreground)]">Telegram</strong>{" "}
+                — Bot API (what today&apos;s demo uses) cannot see DMs you send
+                to other users. <strong>MTProto</strong> user-API can see
+                everything, but requires a phone-number login as you — {" "}
+                <span className="font-mono text-[11px]">4–6 hours</span>{" "}
+                of setup, and it&apos;s a gray area under Telegram&apos;s Bot
+                policies.
+              </li>
+              <li className="text-sm text-[var(--muted-strong)] leading-relaxed">
+                <strong className="text-[var(--foreground)]">WhatsApp</strong>{" "}
+                — <em>Meta&apos;s official Business / Cloud API</em> only
+                handles business-to-customer inbound (wrong product shape for
+                personal relationships), requires 3–5 day Meta verification,
+                and charges per conversation. An unofficial QR-scan client
+                like <code className="font-mono text-[11px]">whatsapp-web.js</code> or{" "}
+                <code className="font-mono text-[11px]">@whiskeysockets/baileys</code>{" "}
+                CAN read your outbound, but it violates WhatsApp&apos;s ToS
+                and Meta periodically bans accounts using it — not safe for
+                your primary number.
+              </li>
+              <li className="text-sm text-[var(--muted-strong)] leading-relaxed">
+                <strong className="text-[var(--foreground)]">Gmail</strong>{" "}
+                — no wall. The official Gmail API (via Composio, already
+                wired for drafts) can also watch your sent folder. First
+                outbound to a new contact with a cue → triggers the
+                follow-up draft automatically. Cleanest path to ship, works
+                today.
+              </li>
+            </ul>
+
             <p className="text-sm text-[var(--muted-strong)] leading-relaxed">
-              MTProto wiring is a 4–6 hour task — scoped into the post-beta
-              roadmap. For today&apos;s hackathon demo, use the <strong>Simulate</strong>
-              {" "}buttons above to run the classifier against canned messages,
-              or DM the bot directly to watch inbound classification work live.
+              For today&apos;s hackathon, this page runs in <strong>demo
+              mode</strong>: the <strong>Simulate</strong> buttons above fire
+              the classifier against canned messages, and DMing the Telegram
+              bot watches inbound classification work live. MTProto + the
+              Gmail sent-folder watcher are post-beta track items.
             </p>
           </div>
         </div>
