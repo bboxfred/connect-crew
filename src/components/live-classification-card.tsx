@@ -317,6 +317,67 @@ export function LiveClassificationCard({
             Simulate failed: {simError}
           </div>
         ) : null}
+
+        {/* Message-fires card — shown IMMEDIATELY after firing a cue,
+            right below the simulate buttons, so judges see the
+            outgoing message without scrolling. */}
+        {firedDraft ? (
+          <div
+            className="mt-5 rounded-xl border p-4"
+            style={{
+              borderColor: `color-mix(in srgb, ${accentColor} 40%, transparent)`,
+              backgroundColor: `color-mix(in srgb, ${accentColor} 7%, white)`,
+            }}
+          >
+            <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+              <div
+                className="font-mono text-[10px] uppercase tracking-widest flex items-center gap-1.5"
+                style={{ color: accentColor }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  className="h-3 w-3"
+                  aria-hidden
+                >
+                  <path d="M22 2 11 13" />
+                  <path d="m22 2-7 20-4-9-9-4 20-7z" />
+                </svg>
+                Message fires to {latest?.signals?.sender_name ?? "your contact"}
+                {firedDraft.matched_trigger ? (
+                  <span className="normal-case tracking-normal text-[var(--muted-strong)]">
+                    · matched &ldquo;{firedDraft.matched_trigger}&rdquo;
+                  </span>
+                ) : (
+                  <span className="normal-case tracking-normal text-[var(--muted-strong)]">
+                    · Claude drafted fresh
+                  </span>
+                )}
+              </div>
+              {firedDraft.gmail_url ? (
+                <a
+                  href={firedDraft.gmail_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+                >
+                  Open in Gmail →
+                </a>
+              ) : null}
+            </div>
+            <p className="text-sm leading-relaxed text-[var(--foreground)] whitespace-pre-wrap">
+              {firedDraft.body}
+            </p>
+            {firedDraft.reasoning ? (
+              <p className="mt-2 font-mono text-[11px] text-[var(--muted)] leading-relaxed">
+                {firedDraft.reasoning}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {/* ── Last Classification section ──────────────────────────────── */}
@@ -415,69 +476,6 @@ export function LiveClassificationCard({
             <p className="mt-3 text-sm text-[var(--muted-strong)] leading-relaxed">
               {signals.reasoning}
             </p>
-          ) : null}
-
-          {/* Fired draft — the reply template that will actually send.
-              Matches the preset you set in the Secret Signals panel when
-              the cue hits a trigger; Claude drafts fresh otherwise. */}
-          {firedDraft ? (
-            <div
-              className="mt-4 rounded-xl border p-4"
-              style={{
-                borderColor: `color-mix(in srgb, ${accentColor} 35%, transparent)`,
-                backgroundColor: `color-mix(in srgb, ${accentColor} 6%, white)`,
-              }}
-            >
-              <div
-                className="flex items-center justify-between gap-2 flex-wrap mb-2"
-              >
-                <div
-                  className="font-mono text-[10px] uppercase tracking-widest flex items-center gap-1.5"
-                  style={{ color: accentColor }}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                    className="h-3 w-3"
-                    aria-hidden
-                  >
-                    <path d="M22 2 11 13" />
-                    <path d="m22 2-7 20-4-9-9-4 20-7z" />
-                  </svg>
-                  Draft fires to {senderName}
-                  {firedDraft.matched_trigger ? (
-                    <span className="normal-case tracking-normal text-[var(--muted-strong)]">
-                      · matched &ldquo;{firedDraft.matched_trigger}&rdquo;
-                    </span>
-                  ) : (
-                    <span className="normal-case tracking-normal text-[var(--muted-strong)]">
-                      · Claude drafted fresh
-                    </span>
-                  )}
-                </div>
-                {firedDraft.gmail_url ? (
-                  <a
-                    href={firedDraft.gmail_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
-                  >
-                    Open in Gmail →
-                  </a>
-                ) : null}
-              </div>
-              <p className="text-sm leading-relaxed text-[var(--foreground)] whitespace-pre-wrap">
-                {firedDraft.body}
-              </p>
-              {firedDraft.reasoning ? (
-                <p className="mt-2 font-mono text-[11px] text-[var(--muted)] leading-relaxed">
-                  {firedDraft.reasoning}
-                </p>
-              ) : null}
-            </div>
           ) : null}
         </>
       )}

@@ -9,18 +9,15 @@ import {
   Square,
   Loader2,
   AlertCircle,
-  Sparkles,
   Check,
   FileAudio,
-  MessageSquareReply,
-  Users,
-  Tags,
-  Quote,
-  ArrowRight,
+  Mail,
+  Sparkles,
+  ExternalLink,
+  UserSearch,
 } from "lucide-react";
 import { CREW } from "@/lib/fixtures";
 import { useGensparkPanel } from "@/components/genspark-side-panel";
-import type { ScribeExtract } from "@/lib/scribe-extractor";
 
 type Mode = "idle" | "recording" | "processing" | "done" | "error";
 
@@ -28,17 +25,32 @@ type ScribeResponse =
   | {
       ok: true;
       transcript: string;
-      extract: ScribeExtract;
+      matched_contact: {
+        id: string;
+        name: string;
+        company: string | null;
+        email: string | null;
+      } | null;
+      match_confidence: number;
+      why_this_contact: string;
+      draft: {
+        subject: string;
+        body: string;
+        reasoning: string;
+        gmail_url: string | null;
+        supabase_draft_id: string | null;
+      };
       steps: string[];
       ai_drive_path: string;
     }
-  | { ok: false; error: string; steps: string[] };
+  | { ok: false; error: string; steps: string[]; transcript?: string };
 
 const WAITING_STEPS = [
   "Receiving audio",
   "Uploading to Genspark AI Drive",
   "Genspark transcribing · whisper-1",
-  "Claude extracting memory + commitments",
+  "Searching your contacts",
+  "Claude drafting the follow-up email",
 ];
 
 export default function ScribePage() {
@@ -81,9 +93,7 @@ export default function ScribePage() {
       mediaRecorderRef.current = recorder;
       audioChunksRef.current = [];
       recorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) {
-          audioChunksRef.current.push(e.data);
-        }
+        if (e.data && e.data.size > 0) audioChunksRef.current.push(e.data);
       };
       recorder.onstop = async () => {
         const blob = new Blob(audioChunksRef.current, {
@@ -125,7 +135,7 @@ export default function ScribePage() {
       crew: "scribe",
       title: "Scribe · Genspark + Claude",
       steps: WAITING_STEPS,
-      stepMs: 12_000,
+      stepMs: 10_000,
       autoDismissMs: null,
     });
 
@@ -133,18 +143,13 @@ export default function ScribePage() {
     form.append("audio", blob, filename);
 
     try {
-      const res = await fetch("/api/scribe", {
-        method: "POST",
-        body: form,
-      });
+      const res = await fetch("/api/scribe", { method: "POST", body: form });
       const json = (await res.json()) as ScribeResponse;
-
       if (!json.ok) {
         panel.run({
           crew: "scribe",
           title: "Scribe · couldn't process",
-          steps:
-            json.steps.length > 0 ? json.steps : ["Couldn't process audio"],
+          steps: json.steps.length > 0 ? json.steps : ["Couldn't process audio"],
           stepMs: 350,
           autoDismissMs: 2000,
         });
@@ -157,7 +162,7 @@ export default function ScribePage() {
         crew: "scribe",
         title: "Scribe · Genspark + Claude",
         steps: json.steps,
-        stepMs: 400,
+        stepMs: 420,
         autoDismissMs: null,
         onDone: () => setMode("done"),
       });
@@ -208,13 +213,18 @@ export default function ScribePage() {
           className="font-editorial text-4xl md:text-5xl tracking-tight"
           style={{ fontWeight: 700, letterSpacing: "-0.025em" }}
         >
-          Scribe turns conversations into memory.
+          Talk to Scribe. Get a follow-up email.
         </h1>
         <p className="mt-4 text-[var(--muted-strong)] max-w-2xl leading-relaxed text-base md:text-lg">
-          Record a voice note or upload audio. Genspark transcribes via
-          whisper-1, Claude extracts the structured memory — summary,
-          people, topics, every commitment with who owes what by when.
-          Lands in your graph, ready to reference.
+          Record or upload a voice note about someone you need to follow up
+          with — &ldquo;Met Sofia at Standard Chartered, need to send her
+          the deck and propose coffee next week.&rdquo; Scribe finds the
+          contact in your graph, drafts the email to them, and stages it in
+          Gmail + Morning Connect for your approval.
+        </p>
+        <p className="mt-3 font-mono text-[11px] text-[var(--muted)] leading-relaxed max-w-2xl">
+          The person needs to already be in your contacts. If they&apos;re
+          not, scan their card first via Scanner.
         </p>
       </header>
 
@@ -244,12 +254,11 @@ export default function ScribePage() {
               className="font-editorial text-2xl md:text-3xl tracking-tight"
               style={{ fontWeight: 600 }}
             >
-              Give Scribe something to remember.
+              Describe the follow-up out loud.
             </h2>
             <p className="mt-3 text-sm text-[var(--muted-strong)] max-w-md leading-relaxed">
-              Record a voice note directly or upload an audio file (mp3,
-              m4a, webm, wav — up to 4MB). Works great for post-meeting
-              memos and voice notes to yourself.
+              Name the person, say what you want to send or ask. Claude
+              handles the rest — match, draft, stage in Gmail.
             </p>
 
             <div className="mt-8 flex items-center gap-3 flex-wrap justify-center">
@@ -278,7 +287,7 @@ export default function ScribePage() {
             </div>
 
             <div className="mt-8 font-mono text-[10px] uppercase tracking-widest text-[var(--muted)]">
-              Powered by Genspark whisper-1 · Claude Opus 4.7
+              Genspark whisper-1 · Claude Opus 4.7 · Composio Gmail
             </div>
           </div>
         ) : null}
@@ -292,11 +301,7 @@ export default function ScribePage() {
                 border: `3px solid ${crew.color}`,
               }}
             >
-              <Mic
-                className="h-10 w-10"
-                style={{ color: crew.color }}
-                strokeWidth={2}
-              />
+              <Mic className="h-10 w-10" style={{ color: crew.color }} strokeWidth={2} />
             </div>
             <div
               className="font-editorial text-5xl tabular-nums mb-2"
@@ -308,7 +313,7 @@ export default function ScribePage() {
               :{(recordingSecs % 60).toString().padStart(2, "0")}
             </div>
             <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted)] mb-8">
-              Recording · speak naturally
+              Recording · name the contact, describe the follow-up
             </div>
             <button
               type="button"
@@ -317,7 +322,7 @@ export default function ScribePage() {
               style={{ backgroundColor: "var(--ink)" }}
             >
               <Square className="h-4 w-4" strokeWidth={2.5} fill="white" />
-              Stop & transcribe
+              Stop & draft email
             </button>
           </div>
         ) : null}
@@ -340,19 +345,17 @@ export default function ScribePage() {
               className="font-editorial text-2xl tracking-tight mb-2"
               style={{ fontWeight: 600 }}
             >
-              Claude + Genspark working…
+              Scribe working…
             </h2>
             <p className="mt-1 text-sm text-[var(--muted-strong)] max-w-md leading-relaxed">
-              Watch the Genspark side panel on the right. Transcription
-              usually completes in 15–40 seconds depending on audio length.
+              Transcribing your note, matching the contact in your graph,
+              drafting the email. Watch the Genspark side panel.
             </p>
             {uploadedName ? (
               <div className="mt-6 inline-flex items-center gap-2 font-mono text-[11px] text-[var(--muted)] px-3 py-1.5 rounded-full border border-[var(--border)]">
                 <FileAudio className="h-3 w-3" strokeWidth={2} />
                 {uploadedName}
-                {uploadedSize != null
-                  ? ` · ${Math.round(uploadedSize / 1024)}KB`
-                  : ""}
+                {uploadedSize != null ? ` · ${Math.round(uploadedSize / 1024)}KB` : ""}
               </div>
             ) : null}
           </div>
@@ -411,11 +414,14 @@ function ScribeResultView({
   accentColor,
   onReset,
 }: {
-  result: { transcript: string; extract: ScribeExtract };
+  result: Extract<ScribeResponse, { ok: true }>;
   accentColor: string;
   onReset: () => void;
 }) {
-  const { transcript, extract } = result;
+  const { transcript, matched_contact, draft, why_this_contact, match_confidence } = result;
+  const hasMatch = matched_contact !== null;
+  const staged = !!draft.supabase_draft_id;
+
   return (
     <div className="flex-1 flex flex-col">
       <div className="p-5 md:p-6 border-b border-[var(--hairline)] flex items-center justify-between gap-3 flex-wrap">
@@ -423,13 +429,15 @@ function ScribeResultView({
           <Check
             className="h-4 w-4"
             strokeWidth={2.5}
-            style={{ color: "var(--sage)" }}
+            style={{ color: hasMatch ? "var(--sage)" : "var(--muted)" }}
           />
           <div
             className="font-mono text-[10px] uppercase tracking-widest"
-            style={{ color: "var(--sage)" }}
+            style={{ color: hasMatch ? "var(--sage)" : "var(--muted)" }}
           >
-            Transcribed + extracted
+            {hasMatch
+              ? `Drafted · ${staged ? "staged in Gmail + Morning Connect" : "no email on contact"}`
+              : "No contact match found"}
           </div>
         </div>
         <button
@@ -441,161 +449,128 @@ function ScribeResultView({
         </button>
       </div>
 
-      <div className="p-5 md:p-6 space-y-6">
-        <section>
-          <div
-            className="font-mono text-[10px] uppercase tracking-widest mb-2"
-            style={{ color: accentColor }}
+      <div className="p-5 md:p-6 space-y-5">
+        {/* Matched contact card */}
+        {hasMatch && matched_contact ? (
+          <section
+            className="rounded-xl p-4 border"
+            style={{
+              borderColor: `color-mix(in srgb, ${accentColor} 30%, transparent)`,
+              backgroundColor: `color-mix(in srgb, ${accentColor} 5%, white)`,
+            }}
           >
-            Summary
-          </div>
-          <p className="text-base md:text-lg leading-relaxed text-[var(--foreground)] max-w-3xl">
-            {extract.summary}
-          </p>
-        </section>
-
-        {extract.commitments.length > 0 ? (
-          <section>
-            <div
-              className="font-mono text-[10px] uppercase tracking-widest mb-3 flex items-center gap-1.5"
-              style={{ color: accentColor }}
-            >
-              <MessageSquareReply className="h-3 w-3" strokeWidth={2} />
-              Commitments · {extract.commitments.length}
-            </div>
-            <ul className="space-y-2">
-              {extract.commitments.map((c, i) => (
-                <li
-                  key={i}
-                  className="rounded-xl border p-3 flex items-start gap-3"
-                  style={{
-                    borderColor: `color-mix(in srgb, ${accentColor} 22%, transparent)`,
-                    backgroundColor: `color-mix(in srgb, ${accentColor} 4%, white)`,
-                  }}
-                >
-                  <span
-                    className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider"
-                    style={{
-                      backgroundColor: `color-mix(in srgb, ${accentColor} 18%, white)`,
-                      color: accentColor,
-                    }}
-                  >
-                    {c.who}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm text-[var(--foreground)] leading-snug font-medium">
-                      {c.what}
-                    </div>
-                    {c.by_when ? (
-                      <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-[var(--muted)]">
-                        by {c.by_when}
-                      </div>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
-        <section
-          className="rounded-xl p-4 border"
-          style={{
-            borderColor: `color-mix(in srgb, ${accentColor} 28%, transparent)`,
-            backgroundColor: `color-mix(in srgb, ${accentColor} 8%, white)`,
-          }}
-        >
-          <div
-            className="font-mono text-[10px] uppercase tracking-widest mb-1.5 flex items-center gap-1.5"
-            style={{ color: accentColor }}
-          >
-            <ArrowRight className="h-3 w-3" strokeWidth={2} />
-            Next step
-          </div>
-          <p className="text-sm leading-relaxed text-[var(--foreground)] font-medium">
-            {extract.next_step}
-          </p>
-        </section>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {extract.people.length > 0 ? (
-            <section>
-              <div
-                className="font-mono text-[10px] uppercase tracking-widest mb-2 flex items-center gap-1.5"
-                style={{ color: accentColor }}
-              >
-                <Users className="h-3 w-3" strokeWidth={2} />
-                People
-              </div>
-              <ul className="flex flex-wrap gap-1.5">
-                {extract.people.map((p) => (
-                  <li
-                    key={p}
-                    className="inline-flex items-center rounded-full px-2.5 py-1 font-mono text-[11px] border"
-                    style={{
-                      borderColor: `color-mix(in srgb, ${accentColor} 22%, transparent)`,
-                      color: "var(--foreground)",
-                    }}
-                  >
-                    {p}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {extract.topics.length > 0 ? (
-            <section>
-              <div
-                className="font-mono text-[10px] uppercase tracking-widest mb-2 flex items-center gap-1.5"
-                style={{ color: accentColor }}
-              >
-                <Tags className="h-3 w-3" strokeWidth={2} />
-                Topics
-              </div>
-              <ul className="flex flex-wrap gap-1.5">
-                {extract.topics.map((t) => (
-                  <li
-                    key={t}
-                    className="inline-flex items-center rounded-full px-2.5 py-1 font-mono text-[11px]"
-                    style={{
-                      backgroundColor: `color-mix(in srgb, ${accentColor} 10%, white)`,
-                      color: accentColor,
-                    }}
-                  >
-                    {t}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-        </div>
-
-        {extract.key_quotes.length > 0 ? (
-          <section>
             <div
               className="font-mono text-[10px] uppercase tracking-widest mb-2 flex items-center gap-1.5"
               style={{ color: accentColor }}
             >
-              <Quote className="h-3 w-3" strokeWidth={2} />
-              Memorable quotes
+              <UserSearch className="h-3 w-3" strokeWidth={2} />
+              Matched contact · {Math.round(match_confidence * 100)}% confidence
             </div>
-            <ul className="space-y-2">
-              {extract.key_quotes.map((q, i) => (
-                <li
-                  key={i}
-                  className="text-sm leading-relaxed text-[var(--muted-strong)] italic border-l-2 pl-3"
-                  style={{
-                    borderColor: `color-mix(in srgb, ${accentColor} 35%, transparent)`,
-                  }}
-                >
-                  &ldquo;{q}&rdquo;
-                </li>
-              ))}
-            </ul>
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span
+                className="font-editorial text-lg md:text-xl tracking-tight"
+                style={{ fontWeight: 700 }}
+              >
+                {matched_contact.name}
+              </span>
+              {matched_contact.company ? (
+                <span className="text-sm text-[var(--muted-strong)]">
+                  · {matched_contact.company}
+                </span>
+              ) : null}
+              {matched_contact.email ? (
+                <span className="font-mono text-[11px] text-[var(--muted)] break-all">
+                  · {matched_contact.email}
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-2 font-mono text-[11px] text-[var(--muted)] leading-relaxed">
+              {why_this_contact}
+            </p>
+          </section>
+        ) : (
+          <section className="rounded-xl p-4 border border-[var(--border)] bg-[var(--paper)]/50">
+            <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted)] mb-2 flex items-center gap-1.5">
+              <UserSearch className="h-3 w-3" strokeWidth={2} />
+              No contact match
+            </div>
+            <p className="text-sm text-[var(--muted-strong)] leading-relaxed">
+              {why_this_contact} Scan their card via{" "}
+              <Link
+                href="/app/scan"
+                className="underline underline-offset-2 text-[var(--foreground)]"
+              >
+                Scanner
+              </Link>
+              {" "}
+              then talk to Scribe again.
+            </p>
+          </section>
+        )}
+
+        {/* Drafted email */}
+        {hasMatch ? (
+          <section className="rounded-xl p-4 md:p-5 border border-[var(--border)] bg-[var(--surface)]">
+            <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
+              <div
+                className="font-mono text-[10px] uppercase tracking-widest flex items-center gap-1.5"
+                style={{ color: accentColor }}
+              >
+                <Mail className="h-3 w-3" strokeWidth={2} />
+                Follow-up email drafted
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {draft.gmail_url ? (
+                  <a
+                    href={draft.gmail_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)] hover:text-[var(--foreground)] transition-colors inline-flex items-center gap-1"
+                  >
+                    Open in Gmail <ExternalLink className="h-3 w-3" strokeWidth={2} />
+                  </a>
+                ) : null}
+                {staged ? (
+                  <Link
+                    href="/app/morning-connect"
+                    className="font-mono text-[10px] uppercase tracking-wider px-2 py-1 rounded-full text-white"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    Review in Morning Connect →
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)] mb-1">
+              Subject
+            </div>
+            <div
+              className="font-editorial text-base md:text-lg tracking-tight mb-3"
+              style={{ fontWeight: 600 }}
+            >
+              {draft.subject}
+            </div>
+
+            <div className="font-mono text-[10px] uppercase tracking-wider text-[var(--muted)] mb-1">
+              Body
+            </div>
+            <p className="text-sm leading-relaxed text-[var(--foreground)] whitespace-pre-wrap">
+              {draft.body}
+            </p>
+
+            {draft.reasoning ? (
+              <p className="mt-3 font-mono text-[11px] text-[var(--muted)] leading-relaxed border-t border-[var(--hairline)] pt-3">
+                <span className="uppercase tracking-wider mr-1">
+                  Why this draft:
+                </span>
+                {draft.reasoning}
+              </p>
+            ) : null}
           </section>
         ) : null}
 
+        {/* Transcript collapsed */}
         <details className="rounded-xl border p-4 border-[var(--border)]">
           <summary className="font-mono text-[10px] uppercase tracking-widest text-[var(--muted-strong)] cursor-pointer flex items-center gap-1.5">
             <Sparkles className="h-3 w-3" strokeWidth={2} />
