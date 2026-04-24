@@ -2303,37 +2303,17 @@ export const fixtureSecretSignals: SecretSignalRule[] = [
   },
 
   // ─── User custom rules (demo) ───
-  {
-    id: "sig-custom-1",
-    category: "voice",
-    condition: "Voice note > 30s from Marcus Low",
-    delta: 5,
-    scope: "telegram",
-    active: true,
-  },
+  // Message Check — scheduled "sweep" for new inbound. Delta 0 because
+  // it's a scheduling rule, not a scoring rule; kept in the list so the
+  // user can edit the time. The condition text is the schedule the
+  // classifier/ingester reads at wake-up time.
   {
     id: "sig-custom-2",
     category: "timing",
-    condition: "Weekend message before 10am",
-    delta: 1,
+    condition: "Message check · 6 AM everyday",
+    delta: 0,
     scope: "all",
     active: true,
-  },
-  {
-    id: "sig-custom-3",
-    category: "event_proximity",
-    condition: "Within 24h of TOKEN2049 / ETHSG",
-    delta: 4,
-    scope: "all",
-    active: true,
-  },
-  {
-    id: "sig-custom-4",
-    category: "silence",
-    condition: "30+ days silent after warm exchange",
-    delta: -5,
-    scope: "all",
-    active: false,
   },
 ];
 
