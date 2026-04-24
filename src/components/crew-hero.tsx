@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 // ─── Crew hero ───────────────────────────────────────────────────────────────
@@ -93,19 +92,6 @@ const characters: CrewChar[] = [
 ];
 
 export function CrewHero() {
-  const [greetedId, setGreetedId] = useState<string | null>(null);
-
-  // Auto-dismiss the speech bubble after 6s
-  useEffect(() => {
-    if (!greetedId) return;
-    const t = setTimeout(() => setGreetedId(null), 6000);
-    return () => clearTimeout(t);
-  }, [greetedId]);
-
-  function handleClick(slug: string) {
-    setGreetedId(slug);
-  }
-
   return (
     <section className="relative mx-auto w-full max-w-7xl px-4 md:px-6 pt-8 md:pt-10 pb-10 md:pb-12">
       {/* Decorative blobs in the background */}
@@ -157,139 +143,142 @@ export function CrewHero() {
         style={{ animationDelay: "0.3s" }}
       >
         {characters.map((c, i) => {
-          const greeted = greetedId === c.slug;
           const media = MEDIA_FILES[c.slug];
+          // Stagger which float cadence each card uses so the 6 don't
+          // move in lockstep.
+          const floatClass =
+            i % 3 === 0
+              ? "anim-crew-float-a"
+              : i % 3 === 1
+                ? "anim-crew-float-b"
+                : "anim-crew-float-c";
           return (
-            <button
+            <div
               key={c.slug}
-              type="button"
-              onClick={() => handleClick(c.slug)}
-              className="relative group text-center focus:outline-none focus-visible:outline-2"
-              aria-label={`Say hi to ${c.name}`}
+              className={cn(
+                "relative group text-center",
+                floatClass,
+              )}
             >
-              {/* Speech bubble — pops above on click */}
-              {greeted ? (
+              {/* 3D flip container — hover flips to back face with blurb */}
+              <div
+                className="aspect-[2/3] relative [perspective:1200px]"
+              >
                 <div
-                  className="absolute left-1/2 -top-4 z-20 -translate-x-1/2 -translate-y-full w-56 md:w-64 anim-bubble-in"
-                  style={{ pointerEvents: "none" }}
+                  className="absolute inset-0 transition-transform duration-700 ease-out group-hover:[transform:rotateY(180deg)]"
+                  style={{ transformStyle: "preserve-3d" }}
                 >
+                  {/* FRONT face — portrait media */}
                   <div
-                    className="rounded-2xl p-4 text-left shadow-lg border bg-white"
+                    className="absolute inset-0 rounded-2xl md:rounded-3xl overflow-hidden"
                     style={{
-                      borderColor: `color-mix(in srgb, ${c.color} 40%, transparent)`,
+                      WebkitBackfaceVisibility: "hidden",
+                      backfaceVisibility: "hidden",
+                      background: `linear-gradient(180deg, color-mix(in srgb, ${c.color} 22%, transparent) 0%, color-mix(in srgb, ${c.color} 4%, transparent) 45%, color-mix(in srgb, ${c.color} 2%, transparent) 70%, color-mix(in srgb, ${c.color} 18%, transparent) 100%)`,
+                    }}
+                  >
+                    {media.kind === "image" && media.ext ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={`/hero/${c.slug}.${media.ext}`}
+                        alt={c.name}
+                        className="absolute inset-0 h-full w-full object-cover select-none"
+                        draggable={false}
+                      />
+                    ) : null}
+                    {media.kind === "video" && media.ext ? (
+                      <video
+                        src={`/hero/${c.slug}.${media.ext}`}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                      />
+                    ) : null}
+
+                    {media.kind === null ? (
+                      <div className="absolute inset-0 flex flex-col items-center justify-between p-5 text-center">
+                        <div
+                          className="font-mono text-[10px] uppercase tracking-widest self-start"
+                          style={{ color: c.color, opacity: 0.85 }}
+                        >
+                          0{i + 1}
+                        </div>
+                        <div
+                          className="font-editorial text-lg md:text-xl tracking-tight"
+                          style={{ color: c.color, fontWeight: 700 }}
+                        >
+                          {c.name}
+                        </div>
+                        <div
+                          className="font-mono text-[9px] uppercase tracking-widest"
+                          style={{ color: c.color, opacity: 0.55 }}
+                        >
+                          media slot
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* Inner edge highlight */}
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 rounded-2xl md:rounded-3xl pointer-events-none"
+                      style={{
+                        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${c.color} 18%, transparent)`,
+                      }}
+                    />
+                    {/* Subtle "hover to flip" hint — fades out on hover */}
+                    <div
+                      className="absolute bottom-3 left-0 right-0 text-center font-mono text-[9px] uppercase tracking-widest pointer-events-none transition-opacity duration-300 group-hover:opacity-0"
+                      style={{
+                        color: "white",
+                        textShadow: "0 1px 2px rgba(0,0,0,0.4)",
+                        opacity: 0.85,
+                      }}
+                    >
+                      hover
+                    </div>
+                  </div>
+
+                  {/* BACK face — greeting + blurb on a solid crew-tinted
+                      card so text reads clearly */}
+                  <div
+                    className="absolute inset-0 rounded-2xl md:rounded-3xl overflow-hidden p-4 md:p-5 flex flex-col justify-center text-left"
+                    style={{
+                      WebkitBackfaceVisibility: "hidden",
+                      backfaceVisibility: "hidden",
+                      transform: "rotateY(180deg)",
+                      background: `linear-gradient(165deg, color-mix(in srgb, ${c.color} 95%, black) 0%, color-mix(in srgb, ${c.color} 70%, black) 100%)`,
+                      boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${c.color} 60%, white)`,
                     }}
                   >
                     <div
-                      className="font-editorial text-base leading-snug mb-1"
-                      style={{ color: c.color }}
+                      className="font-mono text-[9px] uppercase tracking-widest text-white/70 mb-2"
+                    >
+                      0{i + 1} · {c.name}
+                    </div>
+                    <div
+                      className="font-editorial text-sm md:text-base leading-snug text-white mb-2"
+                      style={{ fontWeight: 600 }}
                     >
                       {c.greeting}
                     </div>
-                    <div className="text-xs text-[var(--muted-strong)] leading-relaxed">
+                    <div className="text-[11px] md:text-xs leading-relaxed text-white/85">
                       {c.blurb}
                     </div>
                   </div>
-                  <svg
-                    viewBox="0 0 20 12"
-                    className="absolute left-1/2 -bottom-[10px] -translate-x-1/2"
-                    width="20"
-                    height="12"
-                    aria-hidden
-                  >
-                    <path
-                      d="M0 0 L10 12 L20 0 Z"
-                      fill="white"
-                      stroke={`color-mix(in srgb, ${c.color}, transparent 60%)`}
-                      strokeWidth="0.5"
-                    />
-                  </svg>
                 </div>
-              ) : null}
-
-              {/* Gradient rectangle slot — media goes here */}
-              <div
-                className="aspect-[2/3] relative overflow-hidden rounded-2xl md:rounded-3xl transition-transform duration-300 group-hover:-translate-y-1"
-                style={{
-                  background: `linear-gradient(180deg, color-mix(in srgb, ${c.color} 22%, transparent) 0%, color-mix(in srgb, ${c.color} 4%, transparent) 45%, color-mix(in srgb, ${c.color} 2%, transparent) 70%, color-mix(in srgb, ${c.color} 18%, transparent) 100%)`,
-                }}
-              >
-                {/* Media slot — renders user-provided image or video when configured */}
-                {media.kind === "image" && media.ext ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={`/hero/${c.slug}.${media.ext}`}
-                    alt={c.name}
-                    className="absolute inset-0 h-full w-full object-cover select-none"
-                    draggable={false}
-                  />
-                ) : null}
-                {media.kind === "video" && media.ext ? (
-                  <video
-                    src={`/hero/${c.slug}.${media.ext}`}
-                    className="absolute inset-0 h-full w-full object-cover"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                  />
-                ) : null}
-
-                {/* Placeholder content when no media yet */}
-                {media.kind === null ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-between p-5 text-center">
-                    <div
-                      className="font-mono text-[10px] uppercase tracking-widest self-start"
-                      style={{ color: c.color, opacity: 0.85 }}
-                    >
-                      0{i + 1}
-                    </div>
-                    <div>
-                      <div
-                        className="font-editorial text-lg md:text-xl tracking-tight"
-                        style={{ color: c.color, fontWeight: 700 }}
-                      >
-                        {c.name}
-                      </div>
-                    </div>
-                    <div
-                      className="font-mono text-[9px] uppercase tracking-widest"
-                      style={{ color: c.color, opacity: 0.55 }}
-                    >
-                      media slot
-                    </div>
-                  </div>
-                ) : null}
-
-                {/* Subtle inner edge highlight */}
-                <div
-                  aria-hidden
-                  className="absolute inset-0 rounded-2xl md:rounded-3xl pointer-events-none"
-                  style={{
-                    boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${c.color} 18%, transparent)`,
-                  }}
-                />
               </div>
 
               {/* Name caption below */}
               <div
-                className={cn(
-                  "mt-3 font-editorial text-sm md:text-base tracking-tight text-[var(--ink)] transition-colors",
-                  greeted && "underline underline-offset-4",
-                )}
-                style={{
-                  textDecorationColor: greeted ? c.color : undefined,
-                  fontWeight: 600,
-                }}
+                className="mt-3 font-editorial text-sm md:text-base tracking-tight text-[var(--ink)]"
+                style={{ fontWeight: 600 }}
               >
                 {c.name}
               </div>
-              <div
-                className="font-mono text-[9px] uppercase tracking-widest mt-0.5 opacity-0 group-hover:opacity-70 transition-opacity"
-                style={{ color: c.color }}
-              >
-                click to learn more
-              </div>
-            </button>
+            </div>
           );
         })}
       </div>
